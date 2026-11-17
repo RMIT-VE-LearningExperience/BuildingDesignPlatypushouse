@@ -110,6 +110,33 @@ Areas are the figures printed on sheet A04, not values read back from the model.
 
 The model uses hinged door families. Sheet A04 draws the internal doors as sliding panels.
 
+## Joinery and fixtures (First Floor)
+
+Placeholder blocks, all built from the `M_Counter Top` casework family with one `Platypus ...` type per item. They export to IFC as `IfcFurnishingElement`. Sizes and positions are scaled from sheet A04, which gives no joinery dimensions, so treat them as plus or minus 50 mm.
+
+| Item | Type | Plan extent (mm) | Height above floor |
+|---|---|---|---|
+| Kitchen island | `Platypus Island 1090 x 900` | x 13565 to 14655, y -9465 to -5465 | 900 |
+| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -5465 | 900 |
+| Bed 1 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -7415 to -5585 | 2100 |
+| Bed 2 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -9345 to -7515 | 2100 |
+| Walk-in robe, west | `Platypus Robe 800 x 2100` | x 16585 to 17385, y -7455 to -5555 | 2100 |
+| Walk-in robe, east | `Platypus Robe 800 x 2100` | x 18755 to 19555, y -7455 to -5555 | 2100 |
+| Desk top | `Platypus Desk Top 545 x 720` | x 75 to 3015, y -11210 to -10665 | 680 to 720 |
+| Window seat | `Platypus Window Seat 680 x 450` | x 24215 to 24895, y -9345 to -5585 | 450 |
+| Bath vanity | `Platypus Vanity 450 x 850` | x 5685 to 6135, y -9410 to -7560 | 850 |
+| Bath | `Platypus Bath 750 x 520 placeholder` | x 3135 to 3885, y -9410 to -7560 | 520 |
+| Bath shower base | `Platypus Shower Base 900 x 900 placeholder` | x 3135 to 4035, y -7475 to -6575 | 60 |
+| Ensuite vanity | `Platypus Ensuite Vanity 500 x 850` | x 16585 to 19555, y -11175 to -10675 | 850 |
+| Ensuite shower base | `Platypus Shower Base 900 x 900 placeholder` | x 18685 to 19585, y -8445 to -7545 | 60 |
+
+Known limits of these blocks:
+
+- The family adds a 102 mm upstand along one long edge of every block, so each is 102 mm taller there than the height given.
+- The type names carry the plan depth; the long dimension is the type's Depth parameter (and Length on the instance for wall-run items).
+- The bath and shower bases are solid blocks, not sanitaryware. Replace them with proper fixtures in the engine.
+- The desk top overlaps the south wall lining by 15 mm.
+
 ## Windows
 
 All fixed glazing, hosted in the external walls.
@@ -148,9 +175,15 @@ Sill and head heights are absolute z; subtract 2600 for height above floor. The 
 - Room names changed to the schedule names (LDRY, WIR, upper case), and rooms 10 NORTH DECKING and 11 SOUTH DECKING added.
 - IFC re-exported.
 
+**17 Nov 2026 — joinery added**
+
+- Added 13 placeholder joinery and fixture blocks (table under "Joinery and fixtures").
+- IFC re-exported.
+
 ## Not modelled yet
 
-- Joinery, fixtures and furniture: robes, desk, kitchen island and bench, pantry and store shelving, vanities, WCs, showers, bath, window seat, fireplace unit.
+- WCs, sinks and basins, cooktop, shower screens, pantry and store shelving, laundry fit-out, fireplace unit. The project has no plumbing or appliance families loaded and no residential family library is installed.
+- Loose furniture (beds, sofa, tables, chairs), intended to be added in the game engine.
 - Louvre panels in the windows.
 - Gutters, box gutter and downpipes.
 - Site: boundaries (47.31 x 27.68 m, 1309 m²), driveway, crossover and ground surface from sheet A02.
