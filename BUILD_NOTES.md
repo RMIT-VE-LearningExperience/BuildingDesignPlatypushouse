@@ -137,6 +137,23 @@ Known limits of these blocks:
 - The bath and shower bases are solid blocks, not sanitaryware. Replace them with proper fixtures in the engine.
 - The desk top overlaps the south wall lining by 15 mm.
 
+## Furniture and fixtures (First Floor)
+
+Real Revit families, copied from the `Pacific Continental Residence Sample.rvt` project that ships with Revit 2027. They are US-sized (imperial type names) and were placed by eye from sheet A04, so positions are approximate.
+
+| Room | Items |
+|---|---|
+| Bed 1, Bed 2 | Queen bed (`Bed-Standard`) and two night stands each |
+| Master bed | King bed and two night stands |
+| Living, lounge end | Three `Furniture_Crescent_Armchair` around an `Outdoor Bench` used as a low table |
+| Living, dining | `Outdoor Table` 5'-11" x 2'-6" with four `Chair-Breuer` |
+| Kitchen wall (grid 6) | `Refrigerator-French_Door`, `Range-36_Inch`, then the bench block with a `Sink Kitchen-Double` on it |
+| Laundry | `Washer-Front_Load` and `Dryer-Front_Load` |
+| Bath | `Toilet-Domestic-3D` and `Tub-Rectangular-3D` |
+| Ensuite | `Toilet-Domestic-3D` in the WC compartment |
+
+The kitchen bench block is now 2300 long (y -9465 to -7165) to make room for the range and refrigerator. The bath placeholder block was removed. The robes, island, vanities, desk top, window seat and shower bases are still the placeholder blocks described above. In the IFC the beds, tables and chairs are `IfcFurnishingElement`, the toilets, tub and sink are `IfcFlowTerminal`, and the appliances are `IfcBuildingElementProxy`.
+
 ## Windows
 
 All fixed glazing, hosted in the external walls.
@@ -180,10 +197,16 @@ Sill and head heights are absolute z; subtract 2600 for height above floor. The 
 - Added 13 placeholder joinery and fixture blocks (table under "Joinery and fixtures").
 - IFC re-exported.
 
+**17 Nov 2026 — furniture added**
+
+- Added beds, night stands, armchairs, dining table and chairs, kitchen appliances and sink, washer and dryer, toilets and a bathtub (table under "Furniture and fixtures").
+- Shortened the kitchen bench block and removed the bath placeholder.
+- IFC re-exported.
+
 ## Not modelled yet
 
-- WCs, sinks and basins, cooktop, shower screens, pantry and store shelving, laundry fit-out, fireplace unit. The project has no plumbing or appliance families loaded and no residential family library is installed.
-- Loose furniture (beds, sofa, tables, chairs), intended to be added in the game engine.
+- Vanity basins, shower screens, pantry and store shelving, laundry fit-out, fireplace unit. The project has no plumbing or appliance families loaded and no residential family library is installed.
+- A sofa (no sofa family was available) and detailed joinery in place of the placeholder blocks.
 - Louvre panels in the windows.
 - Gutters, box gutter and downpipes.
 - Site: boundaries (47.31 x 27.68 m, 1309 m²), driveway, crossover and ground surface from sheet A02.
