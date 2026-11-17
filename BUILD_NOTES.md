@@ -117,7 +117,7 @@ Placeholder blocks, all built from the `M_Counter Top` casework family with one 
 | Item | Type | Plan extent (mm) | Height above floor |
 |---|---|---|---|
 | Kitchen island | `Platypus Island 1090 x 900` | x 13565 to 14655, y -9465 to -5465 | 900 |
-| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -5465 | 900 |
+| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -6400 | 900 |
 | Bed 1 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -7415 to -5585 | 2100 |
 | Bed 2 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -9345 to -7515 | 2100 |
 | Walk-in robe, west | `Platypus Robe 800 x 2100` | x 16585 to 17385, y -7455 to -5555 | 2100 |
@@ -125,34 +125,57 @@ Placeholder blocks, all built from the `M_Counter Top` casework family with one 
 | Desk top | `Platypus Desk Top 545 x 720` | x 75 to 3015, y -11210 to -10665 | 680 to 720 |
 | Window seat | `Platypus Window Seat 680 x 450` | x 24215 to 24895, y -9345 to -5585 | 450 |
 | Bath vanity | `Platypus Vanity 450 x 850` | x 5685 to 6135, y -9410 to -7560 | 850 |
-| Bath | `Platypus Bath 750 x 520 placeholder` | x 3135 to 3885, y -9410 to -7560 | 520 |
-| Bath shower base | `Platypus Shower Base 900 x 900 placeholder` | x 3135 to 4035, y -7475 to -6575 | 60 |
 | Ensuite vanity | `Platypus Ensuite Vanity 500 x 850` | x 16585 to 19555, y -11175 to -10675 | 850 |
-| Ensuite shower base | `Platypus Shower Base 900 x 900 placeholder` | x 18685 to 19585, y -8445 to -7545 | 60 |
 
 Known limits of these blocks:
 
 - The family adds a 102 mm upstand along one long edge of every block, so each is 102 mm taller there than the height given.
 - The type names carry the plan depth; the long dimension is the type's Depth parameter (and Length on the instance for wall-run items).
-- The bath and shower bases are solid blocks, not sanitaryware. Replace them with proper fixtures in the engine.
 - The desk top overlaps the south wall lining by 15 mm.
 
 ## Furniture and fixtures (First Floor)
 
-Real Revit families, copied from the `Pacific Continental Residence Sample.rvt` project that ships with Revit 2027. They are US-sized (imperial type names) and were placed by eye from sheet A04, so positions are approximate.
+Real Revit families, copied from two sample projects that ship with Revit 2027 (`Pacific Continental Residence Sample.rvt` and `Snowdon Towers Sample Architectural.rvt`). Most are US-sized. They are laid out to match sheet A04: each piece is set against the wall or neighbour the plan shows, with positions scaled off the sheet (plus or minus 100 mm). Extents below are from the IFC, in mm.
 
-| Room | Items |
-|---|---|
-| Bed 1, Bed 2 | Queen bed (`Bed-Standard`) and two night stands each |
-| Master bed | King bed and two night stands |
-| Living, lounge end | Three `Furniture_Crescent_Armchair` around an `Outdoor Bench` used as a low table |
-| Living, dining | `Outdoor Table` 5'-11" x 2'-6" with four `Chair-Breuer` |
-| Kitchen wall (grid 6) | `Refrigerator-French_Door`, `Range-36_Inch`, then the bench block with a `Sink Kitchen-Double` on it |
-| Laundry | `Washer-Front_Load` and `Dryer-Front_Load` |
-| Bath | `Toilet-Domestic-3D` and `Tub-Rectangular-3D` |
-| Ensuite | `Toilet-Domestic-3D` in the WC compartment |
+| Room | Item (family) | Plan extent | Faces |
+|---|---|---|---|
+| Bed 1 | Single bed (`Bed-Shaker` Twin) | x -521 to 521, y -7425 to -5430 | Head on the Bed 1/Bed 2 wall |
+| Bed 1 | Night stand | x 560 to 1017, y -7425 to -6968 | |
+| Bed 2 | Single bed (`Bed-Shaker` Twin) | x -521 to 521, y -9510 to -7515 | Head on the Bed 1/Bed 2 wall |
+| Bed 2 | Night stand | x 560 to 1017, y -7972 to -7515 | |
+| Bed 2 | Desk chair (`M_Chair-Task (Arms)`) | x 987 to 1661, y -10570 to -9930 | South, to the desk top |
+| Master bed | King bed (`Bed-Standard`) | x 19675 to 21707, y -8456 to -6474 | Head on the grid 7 wall |
+| Master bed | Two night stands | x 19675 to 20132, y -6420 to -5963 and y -8967 to -8510 | |
+| Living, lounge | `Area Rug` 8 x 10 | x 6781 to 9219, y -9174 to -6126 | |
+| Living, lounge | `Sofa` 72" | x 8905 to 9565, y -8644 to -6816 | West, to the fireplace |
+| Living, lounge | Side table (`Table-End`) | x 8795 to 9405, y -6755 to -6145 | |
+| Living, lounge | Coffee table (`Table-Coffee Rectangular`) | x 7524 to 8284, y -8250 to -7050 | |
+| Living, lounge | Armchair (`Furniture_Crescent_Armchair`) | x 7446 to 8234, y -9300 to -8692 | North |
+| Living, dining | Table (`Outdoor Table` 5'-11" x 2'-6") | x 11139 to 11901, y -8482 to -6678 | |
+| Living, dining | Six `Chair-Breuer`, three each side | x 10633 to 11120 and x 11920 to 12407 | The table |
+| Kitchen, grid 6 wall | `Refrigerator-French_Door` | x 15717 to 16393, y -6379 to -5465 | West |
+| Kitchen, grid 6 wall | `Cook Top-4 Unit2` on the bench | x 15898 to 16482, y -7446 to -6811 | |
+| Kitchen island | `Sink Kitchen-Double` | x 13891 to 14424, y -8028 to -6962 | Tap on the west side |
+| Laundry | `Washer-Front_Load`, `Dryer-Front_Load` | x 3197 to 4583, y -6383 to -5607 | North, to door 05 |
+| Bath | `Shower Stall - Rectangular` 36" | x 3135 to 4049, y -7489 to -6575 | |
+| Bath | `Tub-Rectangular-3D` | x 3135 to 3897, y -9082 to -7520 | |
+| Bath | `Toilet-Domestic-3D` | x 5336 to 6135, y -7193 to -6687 | West (cistern on the east wall) |
+| Bath | Basin (`Sink Vanity-Round`) on the vanity block | centre x 5900, y -8390 | |
+| Ensuite | `Toilet-Domestic-3D` | x 16585 to 17384, y -8243 to -7737 | East (cistern on the grid 6 wall) |
+| Ensuite | `Shower Stall - Rectangular` 36" | x 18671 to 19585, y -8459 to -7545 | |
+| Ensuite | Basin (`Sink Vanity-Round`) on the vanity block | centre x 18100, y -10930 | |
+| North decking | `Outdoor Table` with eight `Chair-Breuer` | table x 10471 to 12275, y -2504 to -1742 | The table |
 
-The kitchen bench block is now 2300 long (y -9465 to -7165) to make room for the range and refrigerator. The bath placeholder block was removed. The robes, island, vanities, desk top, window seat and shower bases are still the placeholder blocks described above. In the IFC the beds, tables and chairs are `IfcFurnishingElement`, the toilets, tub and sink are `IfcFlowTerminal`, and the appliances are `IfcBuildingElementProxy`.
+Where this differs from sheet A04:
+
+- The refrigerator is not drawn on A04. It stands at the north end of the kitchen bench run, and the bench block is shortened to y -9465 to -6400 to make room.
+- A04 draws no washer or dryer; it shows a laundry bench with a tub, which is not modelled.
+- The sofa is a straight 1.83 m three-seater; A04 draws a longer one (about 2.4 m). The coffee table is rectangular; A04 draws a round one.
+- The robes, island, kitchen bench, vanities, desk top and window seat are still the placeholder blocks described above. The basins and sinks are set into those blocks without cutting them.
+
+In the IFC the beds, tables, chairs, sofa and rug are `IfcFurnishingElement`, the toilets, tub, showers, basins and sink are `IfcFlowTerminal`, and the appliances and cooktop are `IfcBuildingElementProxy`.
+
+The layout was applied with a Dynamo Python script (Manage > Dynamo), which moves each piece by its bounding box to a wall face or centre point. Chair, sofa, bed and toilet directions were checked from the geometry (which side the backrest, headboard or cistern is on).
 
 ## Windows
 
@@ -203,10 +226,21 @@ Sill and head heights are absolute z; subtract 2600 for height above floor. The 
 - Shortened the kitchen bench block and removed the bath placeholder.
 - IFC re-exported.
 
+**18 Nov 2026 — furniture laid out to sheet A04**
+
+- Bed 1 and Bed 2: queen beds replaced with single beds, heads on the shared wall, one night stand each. Master bed turned so its head is on the grid 7 wall.
+- Lounge: sofa, rug, coffee table and side table added; one armchair kept, two removed, low bench removed.
+- Dining: table turned north-south and moved to the middle of the living room, six chairs.
+- Kitchen: range replaced by a cooktop on the bench; refrigerator turned to back onto the grid 6 wall; sink moved onto the island.
+- Both toilets turned to back onto their walls (the ensuite one had been crossing a partition). Washer and dryer turned to back onto the laundry's south wall.
+- Shower stalls replace the two shower base blocks; basins added to both vanities; bath moved 117 mm south to clear the shower.
+- North decking: table and eight chairs added. Desk chair added in Bed 2.
+- IFC re-exported.
+
 ## Not modelled yet
 
-- Vanity basins, shower screens, pantry and store shelving, laundry fit-out, fireplace unit. The project has no plumbing or appliance families loaded and no residential family library is installed.
-- A sofa (no sofa family was available) and detailed joinery in place of the placeholder blocks.
+- Pantry and store shelving, laundry bench and tub, fireplace unit, rangehood.
+- Detailed joinery in place of the placeholder blocks.
 - Louvre panels in the windows.
 - Gutters, box gutter and downpipes.
 - Site: boundaries (47.31 x 27.68 m, 1309 m²), driveway, crossover and ground surface from sheet A02.
