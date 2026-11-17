@@ -117,7 +117,7 @@ Placeholder blocks, all built from the `M_Counter Top` casework family with one 
 | Item | Type | Plan extent (mm) | Height above floor |
 |---|---|---|---|
 | Kitchen island | `Platypus Island 1090 x 900` | x 13565 to 14655, y -9465 to -5465 | 900 |
-| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -6400 | 900 |
+| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -5465 | 900 |
 | Bed 1 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -7415 to -5585 | 2100 |
 | Bed 2 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -9345 to -7515 | 2100 |
 | Walk-in robe, west | `Platypus Robe 800 x 2100` | x 16585 to 17385, y -7455 to -5555 | 2100 |
@@ -153,10 +153,8 @@ Real Revit families, copied from two sample projects that ship with Revit 2027 (
 | Living, lounge | Armchair (`Furniture_Crescent_Armchair`) | x 7446 to 8234, y -9300 to -8692 | North |
 | Living, dining | Table (`Outdoor Table` 5'-11" x 2'-6") | x 11139 to 11901, y -8482 to -6678 | |
 | Living, dining | Six `Chair-Breuer`, three each side | x 10633 to 11120 and x 11920 to 12407 | The table |
-| Kitchen, grid 6 wall | `Refrigerator-French_Door` | x 15717 to 16393, y -6379 to -5465 | West |
 | Kitchen, grid 6 wall | `Cook Top-4 Unit2` on the bench | x 15898 to 16482, y -7446 to -6811 | |
 | Kitchen island | `Sink Kitchen-Double` | x 13891 to 14424, y -8028 to -6962 | Tap on the west side |
-| Laundry | `Washer-Front_Load`, `Dryer-Front_Load` | x 3197 to 4583, y -6383 to -5607 | North, to door 05 |
 | Bath | `Shower Stall - Rectangular` 36" | x 3135 to 4049, y -7489 to -6575 | |
 | Bath | `Tub-Rectangular-3D` | x 3135 to 3897, y -9082 to -7520 | |
 | Bath | `Toilet-Domestic-3D` | x 5336 to 6135, y -7193 to -6687 | West (cistern on the east wall) |
@@ -168,12 +166,12 @@ Real Revit families, copied from two sample projects that ship with Revit 2027 (
 
 Where this differs from sheet A04:
 
-- The refrigerator is not drawn on A04. It stands at the north end of the kitchen bench run, and the bench block is shortened to y -9465 to -6400 to make room.
-- A04 draws no washer or dryer; it shows a laundry bench with a tub, which is not modelled.
+- The laundry is empty. A04 shows a bench with a tub there, which is not modelled.
+- There is no refrigerator, washer or dryer, because A04 does not draw them.
 - The sofa is a straight 1.83 m three-seater; A04 draws a longer one (about 2.4 m). The coffee table is rectangular; A04 draws a round one.
 - The robes, island, kitchen bench, vanities, desk top and window seat are still the placeholder blocks described above. The basins and sinks are set into those blocks without cutting them.
 
-In the IFC the beds, tables, chairs, sofa and rug are `IfcFurnishingElement`, the toilets, tub, showers, basins and sink are `IfcFlowTerminal`, and the appliances and cooktop are `IfcBuildingElementProxy`.
+In the IFC the beds, tables, chairs, sofa and rug are `IfcFurnishingElement`, the toilets, tub, showers, basins and sink are `IfcFlowTerminal`, and the cooktop is `IfcBuildingElementProxy`.
 
 The layout was applied with a Dynamo Python script (Manage > Dynamo), which moves each piece by its bounding box to a wall face or centre point. Chair, sofa, bed and toilet directions were checked from the geometry (which side the backrest, headboard or cistern is on).
 
@@ -231,8 +229,9 @@ Sill and head heights are absolute z; subtract 2600 for height above floor. The 
 - Bed 1 and Bed 2: queen beds replaced with single beds, heads on the shared wall, one night stand each. Master bed turned so its head is on the grid 7 wall.
 - Lounge: sofa, rug, coffee table and side table added; one armchair kept, two removed, low bench removed.
 - Dining: table turned north-south and moved to the middle of the living room, six chairs.
-- Kitchen: range replaced by a cooktop on the bench; refrigerator turned to back onto the grid 6 wall; sink moved onto the island.
-- Both toilets turned to back onto their walls (the ensuite one had been crossing a partition). Washer and dryer turned to back onto the laundry's south wall.
+- Kitchen: range replaced by a cooktop on the bench; sink moved onto the island.
+- Both toilets turned to back onto their walls (the ensuite one had been crossing a partition).
+- Refrigerator, washer and dryer removed, since A04 does not show them; kitchen bench restored to its full 4000 length.
 - Shower stalls replace the two shower base blocks; basins added to both vanities; bath moved 117 mm south to clear the shower.
 - North decking: table and eight chairs added. Desk chair added in Bed 2.
 - IFC re-exported.
