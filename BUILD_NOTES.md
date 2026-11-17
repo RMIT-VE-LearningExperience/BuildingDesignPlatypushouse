@@ -49,6 +49,7 @@ Numbered grids sit on wall and column centrelines. C and F are the centrelines o
 - North deck: x 6180 to 16540, y -4425 to 75, under a 1° canopy roof on four SHS posts.
 - South deck: x 9110 to 13610, y -10505 to -14905, with a 14-riser stair running east from its south-east corner.
 - Overall length 27 310; overall height 7035.
+- No flat ceiling. The roof is a raked ceiling (plasterboard under the rafters, A08 roof detail), and all 13 internal partitions are attached to the underside of the gable roof, as sections AA and BB show. Their tops run from 5646 at the lowest to 6769 under the ridge. External walls stop at the 5000 pitching point.
 
 ## Construction build-ups (Revit types)
 
@@ -92,7 +93,7 @@ Walls run from First Floor to 5000 (2400 high). The two gable end walls continue
 | 10 | NORTH DECKING | 47 m² |
 | 11 | SOUTH DECKING | 20 m² |
 
-Areas are the figures printed on sheet A04, not values read back from the model. The two deck rooms are bounded by room separation lines on the deck edges.
+Areas are the figures printed on sheet A04; the areas read back from the model are in the change log (review pass). The two deck rooms are bounded by room separation lines on the deck edges.
 
 ## Doors
 
@@ -108,72 +109,86 @@ Areas are the figures printed on sheet A04, not values read back from the model.
 | 08 | 910 x 2340 | Ensuite from master bed, in grid 7 wall |
 | — | 1000 x 2340 (x3) | Glazed deck doors: two to the north deck, one to the south deck |
 
-The model uses hinged door families. Sheet A04 draws the internal doors as sliding panels.
+The model uses hinged door families. Sheet A04 draws every door, including the deck doors, as a sliding panel. Known consequences of the hinged doors:
+
+- Door 01 and the west leaf of door 05 both swing into the 915 mm lobby north of the laundry and cross each other.
+- Door 03 is 910 wide in a hall that is 885 clear (bath wall to south wall), so its frame overlaps both walls and Revit reports "Insert conflicts with joined Wall". Door 01 is centred in its 915 lobby (centre y -5002), door 03 in the hall (centre y -9940), door 08 at centre y -9960.
+- Deck door N2 is hinged on its east side so the leaf clears the kitchen island.
+- Every door head trim finishes 40 mm above the 5000 wall top (2340 door plus a fixed 100 mm head). On the south deck door it shows as a 30 mm strip above the awning.
 
 ## Joinery and fixtures (First Floor)
 
-Placeholder blocks, all built from the `M_Counter Top` casework family with one `Platypus ...` type per item. They export to IFC as `IfcFurnishingElement`. Sizes and positions are scaled from sheet A04, which gives no joinery dimensions, so treat them as plus or minus 50 mm.
+Plain blocks, all built from the `M_Counter Top` casework family with one `Platypus ...` type per item. They export to IFC as `IfcFurnishingElement`. Sizes and positions are scaled from sheet A04, which gives no joinery dimensions, so treat them as plus or minus 50 mm.
 
 | Item | Type | Plan extent (mm) | Height above floor |
 |---|---|---|---|
-| Kitchen island | `Platypus Island 1090 x 900` | x 13565 to 14655, y -9465 to -5465 | 900 |
-| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9465 to -5465 | 900 |
+| Kitchen island | `Platypus Island 1090 x 900` | x 13610 to 14700, y -9465 to -5465 (west edge on grid 5) | 900 |
+| Kitchen bench | `Platypus Kitchen Bench 615 x 900` | x 15880 to 16495, y -9440 to -5465 | 900 |
 | Bed 1 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -7415 to -5585 | 2100 |
 | Bed 2 robe | `Platypus Robe 680 x 2100` | x -2175 to -1495, y -9345 to -7515 | 2100 |
 | Walk-in robe, west | `Platypus Robe 800 x 2100` | x 16585 to 17385, y -7455 to -5555 | 2100 |
 | Walk-in robe, east | `Platypus Robe 800 x 2100` | x 18755 to 19555, y -7455 to -5555 | 2100 |
 | Desk top | `Platypus Desk Top 545 x 720` | x 75 to 3015, y -11210 to -10665 | 680 to 720 |
 | Window seat | `Platypus Window Seat 680 x 450` | x 24215 to 24895, y -9345 to -5585 | 450 |
-| Bath vanity | `Platypus Vanity 450 x 850` | x 5685 to 6135, y -9410 to -7560 | 850 |
+| Bath vanity | `Platypus Vanity 450 x 850` | x 5685 to 6135, y -9410 to -7500 | 850 |
 | Ensuite vanity | `Platypus Ensuite Vanity 500 x 850` | x 16585 to 19555, y -11175 to -10675 | 850 |
+| Laundry bench | `Platypus Laundry Bench 600 x 900` | x 3135 to 5280, y -6485 to -5885 | 900 |
+| Bath shower base | `Platypus Shower Base 900 x 900` | x 3135 to 4035, y -7475 to -6575 | 60 |
+| Ensuite shower base | `Platypus Shower Base 900 x 900` | x 18685 to 19585, y -8445 to -7545 | 60 |
 
 Known limits of these blocks:
 
-- The family adds a 102 mm upstand along one long edge of every block, so each is 102 mm taller there than the height given.
+- The `M_Counter Top` family was edited to remove its 102 mm upstand, so every block is a plain box with a flat top.
+- The island, both vanities and the laundry bench have a real cut-out under each sink. The island is cut by the sink family's own void; the other three are cut by invisible void families named `Platypus Cutout ...` (three instances, no visible geometry). Delete a cutter and its hole closes.
 - The type names carry the plan depth; the long dimension is the type's Depth parameter (and Length on the instance for wall-run items).
 - The desk top overlaps the south wall lining by 15 mm.
 
 ## Furniture and fixtures (First Floor)
 
-Real Revit families, copied from two sample projects that ship with Revit 2027 (`Pacific Continental Residence Sample.rvt` and `Snowdon Towers Sample Architectural.rvt`). Most are US-sized. They are laid out to match sheet A04: each piece is set against the wall or neighbour the plan shows, with positions scaled off the sheet (plus or minus 100 mm). Extents below are from the IFC, in mm.
+Revit families copied from two sample projects that ship with Revit 2027 (`Pacific Continental Residence Sample.rvt` and `Snowdon Towers Sample Architectural.rvt`). Where a family has size parameters, a `Platypus ...` type was made at the size scaled off sheet A04. Positions are scaled off A04 (plus or minus 50 mm) and each piece is set against the wall or neighbour the plan shows. Extents are from the IFC.
 
-| Room | Item (family) | Plan extent | Faces |
+| Room | Family and type | Plan extent (mm) | Top above floor |
 |---|---|---|---|
-| Bed 1 | Single bed (`Bed-Shaker` Twin) | x -521 to 521, y -7425 to -5430 | Head on the Bed 1/Bed 2 wall |
-| Bed 1 | Night stand | x 560 to 1017, y -7425 to -6968 | |
-| Bed 2 | Single bed (`Bed-Shaker` Twin) | x -521 to 521, y -9510 to -7515 | Head on the Bed 1/Bed 2 wall |
-| Bed 2 | Night stand | x 560 to 1017, y -7972 to -7515 | |
-| Bed 2 | Desk chair (`M_Chair-Task (Arms)`) | x 987 to 1661, y -10570 to -9930 | South, to the desk top |
-| Master bed | King bed (`Bed-Standard`) | x 19675 to 21707, y -8456 to -6474 | Head on the grid 7 wall |
-| Master bed | Two night stands | x 19675 to 20132, y -6420 to -5963 and y -8967 to -8510 | |
-| Living, lounge | `Area Rug` 8 x 10 | x 6781 to 9219, y -9174 to -6126 | |
-| Living, lounge | `Sofa` 72" | x 8905 to 9565, y -8644 to -6816 | West, to the fireplace |
-| Living, lounge | Side table (`Table-End`) | x 8795 to 9405, y -6755 to -6145 | |
-| Living, lounge | Coffee table (`Table-Coffee Rectangular`) | x 7524 to 8284, y -8250 to -7050 | |
-| Living, lounge | Armchair (`Furniture_Crescent_Armchair`) | x 7446 to 8234, y -9300 to -8692 | North |
-| Living, dining | Table (`Outdoor Table` 5'-11" x 2'-6") | x 11139 to 11901, y -8482 to -6678 | |
-| Living, dining | Six `Chair-Breuer`, three each side | x 10633 to 11120 and x 11920 to 12407 | The table |
-| Kitchen, grid 6 wall | `Cook Top-4 Unit2` on the bench | x 15898 to 16482, y -7446 to -6811 | |
-| Kitchen island | `Sink Kitchen-Double` | x 13891 to 14424, y -8028 to -6962 | Tap on the west side |
-| Bath | `Shower Stall - Rectangular` 36" | x 3135 to 4049, y -7489 to -6575 | |
-| Bath | `Tub-Rectangular-3D` | x 3135 to 3897, y -9082 to -7520 | |
-| Bath | `Toilet-Domestic-3D` | x 5336 to 6135, y -7193 to -6687 | West (cistern on the east wall) |
-| Bath | Basin (`Sink Vanity-Round`) on the vanity block | centre x 5900, y -8390 | |
-| Ensuite | `Toilet-Domestic-3D` | x 16585 to 17384, y -8243 to -7737 | East (cistern on the grid 6 wall) |
-| Ensuite | `Shower Stall - Rectangular` 36" | x 18671 to 19585, y -8459 to -7545 | |
-| Ensuite | Basin (`Sink Vanity-Round`) on the vanity block | centre x 18100, y -10930 | |
-| North decking | `Outdoor Table` with eight `Chair-Breuer` | table x 10471 to 12275, y -2504 to -1742 | The table |
+| Bed 1 | `Bed-Shaker` Platypus Single 790 x 1905 | x -395 to 395, y -7425 to -5506 | 933 |
+| Bed 1 | `Table-Night Stand` 18" x 18" x 24" | x 488 to 945, y -7324 to -6867 | 610 |
+| Bed 2 | `Bed-Shaker` Platypus Single 790 x 1905 | x -395 to 395, y -9434 to -7515 | 933 |
+| Bed 2 | `Table-Night Stand` 18" x 18" x 24" | x 488 to 945, y -8070 to -7613 | 610 |
+| Bed 2 | `M_Chair-Task (Arms)` M_Chair-Task (Arms) | x 987 to 1661, y -10570 to -9930 | 889 |
+| Laundry | `Sink Vanity-Round` Platypus Laundry Tub on 900 bench | x 4190 to 4672, y -6394 to -5912 | 1087 |
+| Bath | `Toilet-Domestic-3D` Toilet-Domestic-3D | x 5336 to 6135, y -7265 to -6759 | 705 |
+| Bath | `Tub-Rectangular-3D` Platypus 705 x 1800 | x 3135 to 3840, y -9328 to -7528 | 381 |
+| Bath | `M_Sink - Island - Single` Platypus Basin 460 x 350 | x 5702 to 6076, y -8692 to -8235 | 1123 |
+| Living, lounge | `Area Rug` Platypus 1925 x 3400 | x 7064 to 8989, y -9271 to -5871 | 6 |
+| Living, lounge | `Sofa` Platypus 2400 | x 8887 to 9547, y -8955 to -6539 | 813 |
+| Living, lounge | `Table-Night Stand` 18" x 18" x 24" | x 8754 to 9212, y -6506 to -6048 | 610 |
+| Living, lounge | `Table-Trio End` 20" Diameter | x 7639 to 8141, y -7779 to -7277 | 502 |
+| Living, lounge | `Chair-Corbu` Chair | x 7258 to 8296, y -9482 to -8710 | 622 |
+| Living, dining | `Chair-Breuer` Chair-Breuer | 6 pieces within x 10845 to 12178, y -8460 to -6731 | 806 |
+| Living, dining | `Table-Rectangular` Platypus Dining 880 x 2050 | x 11071 to 11952, y -8629 to -6576 | 762 |
+| Kitchen | `Cook Top-4 Unit2` 22" x 20" | x 15898 to 16482, y -7446 to -6811 | 924 |
+| Kitchen | `Sink Kitchen-Double` Platypus 1120 x 495 on 900 bench | x 14167 to 14661, y -8071 to -6950 | 1173 |
+| Ensuite | `Toilet-Domestic-3D` Toilet-Domestic-3D | x 16585 to 17384, y -8243 to -7737 | 705 |
+| Ensuite | `M_Sink - Island - Single` Platypus Basin 460 x 350 | x 17861 to 18318, y -11141 to -10767 | 1123 |
+| Master bed | `Bed-Standard` Platypus Double 1490 x 1860 | x 19707 to 21567, y -8210 to -6720 | 635 |
+| Master bed | `Table-Night Stand` 18" x 18" x 24" | x 19720 to 20177, y -6661 to -6204 | 610 |
+| Master bed | `Table-Night Stand` 18" x 18" x 24" | x 19720 to 20177, y -8740 to -8283 | 610 |
+| North decking | `Outdoor Table` Platypus Deck 735 x 2000 | x 10361 to 12361, y -2514 to -1752 | 749 |
+| North decking | `Chair-Breuer` Chair-Breuer | 8 pieces within x 9854 to 12868, y -3021 to -1245 | 806 |
 
-Where this differs from sheet A04:
+Where this still differs from sheet A04:
 
-- The laundry is empty. A04 shows a bench with a tub there, which is not modelled.
-- There is no refrigerator, washer or dryer, because A04 does not draw them.
-- The sofa is a straight 1.83 m three-seater; A04 draws a longer one (about 2.4 m). The coffee table is rectangular; A04 draws a round one.
-- The robes, island, kitchen bench, vanities, desk top and window seat are still the placeholder blocks described above. The basins and sinks are set into those blocks without cutting them.
+- Coffee table: A04 draws a round table about 760 across; the only round family available is 502 across and has no size parameter.
+- Sofa: length matches (2416) but the family is 660 deep; A04 draws about 840.
+- Armchair: `Chair-Corbu` at its stock 1040 x 770; A04 draws about 1000 x 840.
+- Night stands and side table: stock 457 square; A04 draws about 445 square (side table about 495 x 390).
+- Dining and deck chairs: one stock chair family for both; A04 draws plain squares.
+- Basins: rectangular 460 x 350 as drawn. The laundry tub is round as drawn but 482 across where A04 draws about 390.
+- Bath vanity: 450 deep; A04 scales at about 485. A short wall nib A04 draws between the WC and the vanity is not modelled (its height is not given).
+- Showers: A04 shows a square with a floor waste. The model has a 60 mm base only; screens and fittings are not modelled.
 
-In the IFC the beds, tables, chairs, sofa and rug are `IfcFurnishingElement`, the toilets, tub, showers, basins and sink are `IfcFlowTerminal`, and the cooktop is `IfcBuildingElementProxy`.
+In the IFC the beds, tables, chairs, sofa and rug are `IfcFurnishingElement`, the toilets, tub, basins and sinks are `IfcFlowTerminal`, and the cooktop is `IfcBuildingElementProxy`.
 
-The layout was applied with a Dynamo Python script (Manage > Dynamo), which moves each piece by its bounding box to a wall face or centre point. Chair, sofa, bed and toilet directions were checked from the geometry (which side the backrest, headboard or cistern is on).
+The layout and the review fixes were applied with Dynamo Python scripts (Manage > Dynamo), which move each piece by its geometry to a wall face or centre point. Chair, sofa, bed, toilet and tap directions were checked from the geometry.
 
 ## Windows
 
@@ -236,10 +251,27 @@ Sill and head heights are absolute z; subtract 2600 for height above floor. The 
 - North decking: table and eight chairs added. Desk chair added in Bed 2.
 - IFC re-exported.
 
+**18 Nov 2026 — review pass against A04, A07 and A08**
+
+Method: every element's extents were read from the IFC and checked for clashes, floating or buried items and duplicates; each room and the exterior were rendered and looked over; Revit's warnings, door swings and room areas were read from the model; and the plan and sections were compared at high zoom.
+
+- Internal partitions attached to the underside of the gable roof (they stopped at 2400, leaving every room open to the next above the wall tops).
+- Removed the 102 mm upstand from every joinery block. It sat on the room side of the kitchen bench, ensuite vanity and desk, and across one end of the island, robes, window seat and bath vanity.
+- Sinks: the vanity basins were 53 mm below the bench top with only the tap showing, and the island was not cut out under the sink. Basins replaced with rectangular ones as drawn, set on the bench tops with the taps to the wall, and all benches cut out under their sinks.
+- Laundry bench and round tub added (A04 shows them).
+- Shower stalls (solid 1.8 m boxes) replaced with 60 mm shower bases.
+- Sizes matched to A04: single beds 790 x 1905, master bed 1490 x 1860, sofa 2416 long, rug 1925 x 3400, dining table 880 x 2050 (was an outdoor table with an umbrella hole), deck table 735 x 2000, bath 705 x 1800, island sink 1120 x 495.
+- Lounge: armchair changed to a square-armed chair as drawn, coffee table changed to a round one, side table changed from a 762 high table to a 610 high one.
+- Island moved 45 mm east so its west edge is on grid 5; sink moved to the east side of the island as drawn; kitchen bench stopped 25 mm short of door 06's frame.
+- Doors 01, 03 and 08 moved to their drawn positions (door 03's opening had been cutting into the bathroom corner); deck door N2 re-hung on its east side.
+- Cleared a duplicate type mark on an unused floor type. Three Revit warnings remain: two room separation lines overlapping wall returns on the south deck, and door 03 against the bath wall.
+- Room areas read from the model: BATH 8.5, BED 1 14.2, BED 2 16.5, ENSUITE 10.9, HALL 2.7, LDRY 2.0, LIVING 70.3, MASTER BED 28.8, NORTH DECKING 45.8, SOUTH DECKING 19.5, WIR 5.8 (225 m² against 230 scheduled). LDRY (5 scheduled) and MASTER BED (33 scheduled) differ most; the schedule seems to count the lobbies north of the laundry and walk-in robe with those rooms, where the model counts them with LIVING.
+- IFC re-exported.
+
 ## Not modelled yet
 
-- Pantry and store shelving, laundry bench and tub, fireplace unit, rangehood.
-- Detailed joinery in place of the placeholder blocks.
+- Pantry and store shelving, fireplace unit (its recess is an enclosed box, as drawn in plan), rangehood, shower screens and fittings.
+- Detailed joinery in place of the plain blocks.
 - Louvre panels in the windows.
 - Gutters, box gutter and downpipes.
 - Site: boundaries (47.31 x 27.68 m, 1309 m²), driveway, crossover and ground surface from sheet A02.
