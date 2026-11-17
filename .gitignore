@@ -1,0 +1,3 @@
+# Revit numbered backups and session lock files
+*.[0-9][0-9][0-9][0-9].rvt
+*.rvt.lck
