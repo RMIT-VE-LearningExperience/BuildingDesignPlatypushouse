@@ -1,0 +1,8 @@
+/Source/
+**/bin/
+**/obj/
+# Rebuild private model geometry and scene data from the teacher's local RVT.
+/VR/Assets/Models/TeacherHouse.glb
+/VR/Assets/HouseTour.unity
+/VR/Assets/HouseTour/
+/VR/Assets/Generated/TeacherPlan*.png

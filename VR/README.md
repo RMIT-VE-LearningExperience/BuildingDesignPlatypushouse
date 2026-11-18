@@ -1,0 +1,3 @@
+# Teacher tour texture sources
+
+The texture and environment sources are CC0 assets from Poly Haven. The tour uses [wood floor](https://polyhaven.com/a/wood_floor), [deck boards](https://polyhaven.com/a/wood_floor_deck), [wood tabletop](https://polyhaven.com/a/wood_table_001), [corrugated iron](https://polyhaven.com/a/corrugated_iron), [rough concrete](https://polyhaven.com/a/rough_concrete), [gravel ground](https://polyhaven.com/a/gravel_ground_01), [linen](https://polyhaven.com/a/rough_linen) and [partly cloudy daylight](https://polyhaven.com/a/kloofendal_38d_partly_cloudy). The albedo is toned for the finishes, and the smoothness maps use the inverse of the scanned roughness. [Poly Haven asset licence](https://polyhaven.com/license)
