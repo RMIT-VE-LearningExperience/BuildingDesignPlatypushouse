@@ -2,6 +2,8 @@
 
 The Quest 3 tour starts in the undercroft. Point a controller at **Explore the house** and squeeze the trigger. Use either thumbstick to move. Push forward, aim at the floor and release over a valid landing ring. Push sideways for a 30° snap turn.
 
+If both controllers lose tracking, a gaze reticle appears. Look at a button for about a second to select it. Look down for about a second, then look up to reopen Places. A tracked controller takes over when it returns.
+
 Press **A** or **X** to open **Places**. Choose a named stop to travel directly, switch between the ground and first-floor plans, or use **Recenter view**. The map marks your position and facing direction on the current floor. Optional turn shading is available here. The signs at the south staircase link its two landings. At the north deck, select **Finished**, **Cutaway** or **Framing** to inspect the wall.
 
 ## Build the APK

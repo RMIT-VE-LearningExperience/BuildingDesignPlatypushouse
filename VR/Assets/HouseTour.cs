@@ -4,6 +4,7 @@ using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.XR;
 
 public sealed class HouseTour : MonoBehaviour
@@ -20,26 +21,63 @@ public sealed class HouseTour : MonoBehaviour
     public const int WorldMask = ~(1 << TourPanel.Layer | 1 << 2);
     const float Radius = .24f;
 
-    sealed class Hand : IDisposable
+    sealed class Hand
     {
-        readonly InputAction aim, trigger, primary, stick;
-        public Hand(string side)
+        readonly XRNode node;
+        XRController controller;
+        UnityEngine.XR.InputDevice native;
+        Vector3Control aimPosition;
+        QuaternionControl aimRotation;
+        ButtonControl trigger,primary,aimTracked;
+        Vector2Control stick;
+        bool triggerHeld, primaryHeld;
+        public bool Select { get; private set; }
+        public bool Places { get; private set; }
+        public Vector2 Axis { get; private set; }
+        static readonly InputFeatureUsage<Vector3> NativePointerPosition = new("PointerPosition");
+        static readonly InputFeatureUsage<Quaternion> NativePointerRotation = new("PointerRotation");
+
+        public Hand(XRNode node) { this.node=node; }
+
+        public void Sample()
         {
-            string root = "<XRController>{" + side + "Hand}/";
-            aim = Action(root+"aimPose",InputActionType.Value);
-            trigger = Action(root+"triggerPressed",InputActionType.Button);
-            primary = Action(root+"primaryButton",InputActionType.Button);
-            stick = Action(root+"thumbstick",InputActionType.Value);
+            var current = node==XRNode.LeftHand ? XRController.leftHand : XRController.rightHand;
+            if(current!=controller){
+                controller=current;
+                aimPosition=current?.TryGetChildControl<Vector3Control>("pointerPosition");
+                aimRotation=current?.TryGetChildControl<QuaternionControl>("pointerRotation");
+                aimTracked=current?.TryGetChildControl<ButtonControl>("pointer/isTracked");
+                trigger=current?.TryGetChildControl<ButtonControl>("triggerPressed");
+                primary=current?.TryGetChildControl<ButtonControl>("primaryButton");
+                stick=current?.TryGetChildControl<Vector2Control>("thumbstick");
+            }
+            if(!native.isValid) native=InputDevices.GetDeviceAtXRNode(node);
+            bool pressed=trigger?.isPressed ?? false;
+            bool open=primary?.isPressed ?? false;
+            if(trigger==null) native.TryGetFeatureValue(UnityEngine.XR.CommonUsages.triggerButton,out pressed);
+            if(primary==null) native.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primaryButton,out open);
+            Vector2 axis=default;
+            if(stick!=null) axis=stick.ReadValue(); else native.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primary2DAxis,out axis);
+            Select=pressed && !triggerHeld; Places=open && !primaryHeld; Axis=axis;
+            triggerHeld=pressed; primaryHeld=open;
         }
-        static InputAction Action(string path, InputActionType type)
+
+        public bool TryRay(Transform space, out Ray ray)
         {
-            var a = new InputAction(type:type,binding:path); a.Enable(); return a;
+            Vector3 position=aimPosition?.ReadValue() ?? default;
+            Quaternion rotation=aimRotation?.ReadValue() ?? default;
+            bool valid=controller!=null && (controller.isTracked.isPressed || (aimTracked?.isPressed ?? false)) && ValidPose(position,rotation);
+            if (!valid) {
+                var device = native;
+                valid = device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.isTracked, out bool tracked) && tracked &&
+                        device.TryGetFeatureValue(NativePointerPosition, out position) &&
+                        device.TryGetFeatureValue(NativePointerRotation, out rotation) && ValidPose(position, rotation);
+            }
+            ray = valid ? new Ray(space.TransformPoint(position),space.rotation*rotation*Vector3.forward) : default;
+            return valid;
         }
-        public PoseState Pose => aim.ReadValue<PoseState>();
-        public bool Select => trigger.WasPressedThisFrame();
-        public bool Places => primary.WasPressedThisFrame();
-        public Vector2 Axis => stick.ReadValue<Vector2>();
-        public void Dispose() { aim.Dispose(); trigger.Dispose(); primary.Dispose(); stick.Dispose(); }
+        static bool ValidPose(Vector3 p,Quaternion q) =>
+            float.IsFinite(p.sqrMagnitude) && p.sqrMagnitude > .000001f && Mathf.Abs(Quaternion.Dot(q,q)-1f)<.05f;
     }
 
     Hand left,right,active,teleportHand;
@@ -51,19 +89,25 @@ public sealed class HouseTour : MonoBehaviour
     CanvasGroup shade;
     int wallState, mapLevel;
     bool stickLatched, vignette, started;
-    float fade;
+    float fade, dwellTime, lookDownTime;
+    Collider dwellTarget;
+    bool gazeMode, lookDownLatched;
+    const float DwellSeconds = 1.1f;
     static readonly string[] States = {"Finished","Cutaway","Framing"};
     static readonly string[] Notes = {
         "Steel cladding · profile provisional",
         "20 mm cladding zone / 90 mm frame / 10 mm lining",
         "90 mm timber studs and plates"
     };
+    MaterialPropertyBlock pointerColors;
+    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     readonly Vector3[] arc = new Vector3[49];
 
-    void OnEnable() { left = new Hand("Left"); right = new Hand("Right"); active = right; }
-    void OnDisable() { left?.Dispose(); right?.Dispose(); teleportHand = null; }
+    void OnEnable() { left = new Hand(XRNode.LeftHand); right = new Hand(XRNode.RightHand); active = right; }
+    void OnDisable() { teleportHand = null; }
     void Start()
     {
+        pointerColors=new MaterialPropertyBlock();
         Application.targetFrameRate=72;
         head=Origin.Camera.transform;
         menu=TourPanel.Create("Places",new Vector2(1150,740));
@@ -132,8 +176,8 @@ public sealed class HouseTour : MonoBehaviour
         PlacePanel(); menu.Clear();
         menu.Text("Platypus House",0,242,1050,95,69);
         menu.Text("You are in the undercroft",0,139,1050,78,47);
-        menu.Text("Push the stick forward, aim at the floor and release to move.\nPoint and squeeze the trigger to select.\nPress A or X for the Places map.",0,-35,1050,218,38);
-        menu.Button("Explore the house",0,-250,560,CloseMenu);
+        menu.Text("Point and squeeze the trigger. Push the stick forward and release to move. A or X opens Places.\nWithout a pointer, look at a button and hold. Look down to reopen Places.",0,-35,1050,224,36);
+        menu.Button("Explore the house",0,-250,560,()=>{if(gazeMode)Places(CurrentLevel());else CloseMenu();});
     }
 
     void CloseMenu(){ menu.gameObject.SetActive(false); playerMarker=null; }
@@ -210,21 +254,37 @@ public sealed class HouseTour : MonoBehaviour
 
     void Update()
     {
-        if(!started && head.localPosition.sqrMagnitude>.01f){started=true; Welcome();}
-        if(!started)return;
+        if(!started){started=true; Welcome();}
         fade=Mathf.MoveTowards(fade,0,Time.unscaledDeltaTime*4); shade.alpha=fade;
         UpdateMarker();
+        left.Sample(); right.Sample();
         if(left.Select || left.Places || left.Axis.sqrMagnitude>.4f) active=left;
         else if(right.Select || right.Places || right.Axis.sqrMagnitude>.4f) active=right;
         if(teleportHand!=null)active=teleportHand;
-        var pose=active.Pose;
-        if(!pose.isTracked && teleportHand==null){active=active==right?left:right;pose=active.Pose;}
-        if(!pose.isTracked){Beam.enabled=ring.enabled=false;teleportHand=null;menu.Point(null);wall?.Point(null);return;}
-        var tracking=Origin.CameraFloorOffsetObject.transform;
-        var ray=new Ray(tracking.TransformPoint(pose.position),tracking.rotation*pose.rotation*Vector3.forward);
+        var trackingSpace=Origin.CameraFloorOffsetObject.transform;
+        bool controller=active.TryRay(trackingSpace,out var ray);
+        var other=active==right ? left : right;
+        if(teleportHand==null && other.TryRay(trackingSpace,out var otherRay) &&
+           (!controller || (!active.Select && !active.Places && active.Axis.sqrMagnitude<.1f &&
+            !AimsAtButton(ray) && AimsAtButton(otherRay)))){
+            active=other; ray=otherRay; controller=true;
+        }
+        gazeMode=!controller;
+        if(gazeMode){
+            teleportHand=null;
+            ray=new Ray(head.position,head.forward);
+            bool down=head.forward.y<-.75f;
+            if(!down){lookDownLatched=false;lookDownTime=0;}
+            else if(!menu.gameObject.activeSelf && !lookDownLatched){
+                lookDownTime+=Time.unscaledDeltaTime;
+                if(lookDownTime>=DwellSeconds){
+                    lookDownLatched=true; PlacePanel(); Places(CurrentLevel());
+                }
+            }
+        }else{lookDownTime=0;lookDownLatched=false;dwellTime=0;dwellTarget=null;}
         if(active.Places){teleportHand=null;if(menu.gameObject.activeSelf && playerMarker!=null)CloseMenu();else{PlacePanel();Places(CurrentLevel());}}
         Vector2 stick=active.Axis;
-        if(!menu.gameObject.activeSelf && teleportHand==null && !stickLatched && stick.y>.7f)teleportHand=active;
+        if(controller && !menu.gameObject.activeSelf && teleportHand==null && !stickLatched && stick.y>.7f)teleportHand=active;
         if(teleportHand!=null){
             bool ok=TraceArc(ray,out var point);
             if(stick.y<.35f){
@@ -245,12 +305,29 @@ public sealed class HouseTour : MonoBehaviour
         TourPanel stair=null;
         foreach(var sign in stairSigns) if(sign!=null && sign.Point(collider)) stair=sign;
         Color color=onMenu||onWall||stair!=null?Color.cyan:Color.white;
-        Beam.enabled=true; Beam.positionCount=2; Beam.SetPosition(0,ray.origin);Beam.SetPosition(1,ray.GetPoint(hit?target.distance:4));
-        Beam.startColor=Beam.endColor=color;
-        ring.enabled=hit;
-        if(hit) Ring(target.point+target.normal*.004f,target.normal,Mathf.Clamp(target.distance*.009f,.009f,.032f),color);
-        if(active.Select){if(onMenu)menu.Press(collider);else if(onWall)wall.Press(collider);else stair?.Press(collider);}
+        Beam.enabled=controller; Beam.positionCount=2; Beam.SetPosition(0,ray.origin);Beam.SetPosition(1,ray.GetPoint(hit?target.distance:4));
+        PaintPointer(Beam,color);
+        bool button=onMenu || onWall || stair!=null;
+        float radius=Mathf.Clamp((hit ? target.distance : 1.5f)*.009f,.009f,.032f);
+        bool dwellClick=false;
+        if(gazeMode){
+            var hovered=button ? collider : null;
+            if(hovered!=dwellTarget){dwellTarget=hovered;dwellTime=0;}
+            if(hovered!=null && dwellTime<DwellSeconds){
+                dwellTime+=Time.unscaledDeltaTime;
+                dwellClick=dwellTime>=DwellSeconds;
+            }
+            radius*=1f+.65f*Mathf.Clamp01(dwellTime/DwellSeconds);
+        }
+        if(hit) Ring(target.point+target.normal*.008f,target.normal,radius,color);
+        else Ring(ray.GetPoint(1.5f),-ray.direction,radius,color);
+        if(active.Select || dwellClick){
+            if(onMenu)menu.Press(collider);else if(onWall)wall.Press(collider);else stair?.Press(collider);
+        }
     }
+
+    static bool AimsAtButton(Ray ray) =>
+        Physics.Raycast(ray,out var hit,9f,~(1<<2)) && hit.collider.gameObject.layer==TourPanel.Layer;
 
     bool TraceArc(Ray ray,out Vector3 point)
     {
@@ -273,7 +350,7 @@ public sealed class HouseTour : MonoBehaviour
         }
         Beam.enabled=true; Beam.positionCount=count;
         for(int i=0;i<count;i++)Beam.SetPosition(i,arc[i]);
-        Beam.startColor=Beam.endColor=valid?Color.cyan:Color.gray;
+        PaintPointer(Beam,valid?Color.cyan:Color.gray);
         menu.Point(null); wall?.Point(null); return valid;
     }
 
@@ -288,10 +365,16 @@ public sealed class HouseTour : MonoBehaviour
         return true;
     }
 
+    void PaintPointer(LineRenderer line,Color color)
+    {
+        pointerColors.SetColor(BaseColor,color);
+        line.SetPropertyBlock(pointerColors);
+    }
+
     void Ring(Vector3 p,Vector3 normal,float radius,Color color)
     {
         var rot=Quaternion.FromToRotation(Vector3.up,normal);
-        ring.enabled=true;ring.startColor=ring.endColor=color;
+        ring.enabled=true;PaintPointer(ring,color);
         for(int i=0;i<32;i++){
             float t=i*Mathf.PI/16;
             ring.SetPosition(i,p+rot*new Vector3(Mathf.Cos(t)*radius,0,Mathf.Sin(t)*radius));

@@ -76,7 +76,8 @@ public static class HouseBuild
         sun.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
 
         var solid = Material("Courtyard", new Color(.30f,.33f,.29f),"Universal Render Pipeline/Lit");
-        var ground = Box("Ground", new Vector3(11f, -.125f, -6f), new Vector3(40f,.25f,30f), solid,null);
+        var ground = Box("Ground", new Vector3(11f, -.165f, -6f), new Vector3(40f,.25f,30f), solid,null);
+        // Keep the visual soil 40 mm below the IFC slab and footing faces at elevation zero.
         // Only the space below the house and the stair foot are approved ground landings.
         ground.layer = 0;
         GameObjectUtility.SetStaticEditorFlags(ground,StaticEditorFlags.ContributeGI);
@@ -180,8 +181,8 @@ public static class HouseBuild
             }
         }
 
-        PlayerSettings.bundleVersion = "1.1.0";
-        PlayerSettings.Android.bundleVersionCode = 2;
+        PlayerSettings.bundleVersion = "1.1.1";
+        PlayerSettings.Android.bundleVersionCode = 3;
         PlayerSettings.productName = "Platypus House VR";
         PlayerSettings.SetApplicationIdentifier(target, "com.platypushouse.vr");
         PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
@@ -270,6 +271,7 @@ public static class HouseBuild
         var head = new GameObject("Main Camera");
         head.tag = "MainCamera";
         head.transform.SetParent(offset.transform, false);
+        head.transform.localPosition = Vector3.up * 1.62f;
         var camera = head.AddComponent<Camera>();
         camera.nearClipPlane = 0.055f;
         camera.farClipPlane = 80f;
@@ -278,6 +280,7 @@ public static class HouseBuild
         head.AddComponent<AudioListener>();
         var pose = head.AddComponent<TrackedPoseDriver>();
         pose.positionInput = new InputActionProperty(new InputAction(binding: "<XRHMD>/centerEyePosition"));
+        pose.trackingStateInput = new InputActionProperty(new InputAction(binding: "<XRHMD>/trackingState"));
         pose.rotationInput = new InputActionProperty(new InputAction(binding: "<XRHMD>/centerEyeRotation"));
 
         var origin = root.AddComponent<XROrigin>();
@@ -291,7 +294,7 @@ public static class HouseBuild
         tour.Beam.positionCount = 2;
         tour.Beam.startWidth = 0.008f;
         tour.Beam.endWidth = 0.004f;
-        tour.Beam.sharedMaterial = tour.RayMaterial = Material("Ray", Color.white, "Sprites/Default");
+        tour.Beam.sharedMaterial = tour.RayMaterial = Material("QuestPointer", Color.white, "Universal Render Pipeline/Unlit");
         return tour;
     }
 
