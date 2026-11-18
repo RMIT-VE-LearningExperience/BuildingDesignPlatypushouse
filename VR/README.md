@@ -19,6 +19,14 @@ Press **A** or **X** for **Places**. The map shows destinations on each floor, i
 - The wall sample is authored in `Tools/NorthWall.blend` and exported as `Assets/Models/Wall.glb`. Keep the Framing, Full and Cutaway groups. To regenerate the sample, run Blender with `-b --python Tools/wall.py`.
 - The 120 mm wall build-up uses the model notes and sheet A08. The cladding profile, stud spacing and profile proportions are illustrative.
 
+## Surfaces and daylight
+
+The building import uses the Revit material names and face orientation to distinguish plaster linings, roof sheets, charcoal cladding and the two timber floors. Physical texture scale is in metres. Manufacturer, timber species and finish samples were unavailable. The photographic finishes represent those material classes. The site capture supplies an illustrative daylight environment.
+
+The texture and environment sources are CC0 assets from Poly Haven. The tour uses [wood floor](https://polyhaven.com/a/wood_floor), [deck boards](https://polyhaven.com/a/wood_floor_deck), [wood tabletop](https://polyhaven.com/a/wood_table_001), [corrugated iron](https://polyhaven.com/a/corrugated_iron), [rough concrete](https://polyhaven.com/a/rough_concrete), [gravel ground](https://polyhaven.com/a/gravel_ground_01), [linen](https://polyhaven.com/a/rough_linen) and [partly cloudy daylight](https://polyhaven.com/a/kloofendal_38d_partly_cloudy). The albedo is toned for the finishes, and the smoothness maps use the inverse of the scanned roughness. [Poly Haven asset licence](https://polyhaven.com/license)
+
+The model refresh uses `uv` to run `Tools/Finish-House.py` after IFC conversion. It produces metre-scaled texture coordinates, tangent frames and separate lightmap charts on the architectural shell. Building and ground shadows, bounced light and room reflections are baked. Android uses mipmapped ASTC textures, 4× MSAA and OpenXR recommended viewport resolution within 85–120% of the reference size.
+
 ## Headset acceptance
 
 Start at the stair foot, follow the forward route and manually teleport through both open sliders. Explore all four sides of the site. Check the pointer on both hands, gaze selection, eye height, all three wall states, and text at normal distance. Open the Meta menu and resume. Verify that head tracking remains stable and that tour buttons ignore system-menu input. Test untethered and measure frame timing against 13.9 ms at 72 Hz.

@@ -75,15 +75,18 @@ public static class HouseBuild
         sun.shadowAngle = 20f;
         sun.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
 
-        var solid = Material("Courtyard", new Color(.30f,.33f,.29f),"Universal Render Pipeline/Lit");
+        var finishes = greybox ? null : new HouseSurfaces();
+        var solid = finishes?.Ground ?? Material("Courtyard", new Color(.30f,.33f,.29f),"Universal Render Pipeline/Lit");
         var ground = Box("Ground", new Vector3(11f, -.127f, -6f), new Vector3(40f,.25f,30f), solid,null);
         ground.layer = HouseTour.Walkable;
+        ground.GetComponent<MeshRenderer>().scaleInLightmap=.55f;
         GameObjectUtility.SetStaticEditorFlags(ground,StaticEditorFlags.ContributeGI);
         if (greybox) {
             var upper = Box("Upper floor",new Vector3(11,2.45f,-6),new Vector3(13,.3f,19),solid,null);
             upper.layer = HouseTour.Walkable;
         } else {
-            InstallHouse();
+            HouseSurfaces.Daylight(sun);
+            InstallHouse(finishes);
             // Continuous collision faces follow the open-rod guards from the reviewed IFC.
             Guard(new Vector3(6.24f,3.10f,-2.20f), new Vector3(.04f,1,4.44f));
             Guard(new Vector3(16.48f,3.10f,-2.20f), new Vector3(.04f,1,4.44f));
@@ -110,12 +113,14 @@ public static class HouseBuild
                 Stop("North grounds",new Vector3(11,-.002f,5),0), Stop("East grounds",new Vector3(29,-.002f,-6),0),
                 Stop("South grounds",new Vector3(11,-.002f,-19),0)});
         }
+        if(!greybox)tour.Origin.Camera.clearFlags=CameraClearFlags.Skybox;
         tour.Origin.transform.SetPositionAndRotation(tour.Stops[0].position,tour.Stops[0].rotation);
         tour.MapBounds=new Rect(-9,-21,40,30);
         tour.Plans=new[]{ MakePlan(tour.MapBounds,0,greybox),MakePlan(tour.MapBounds,1,greybox) };
         if (!greybox) {
             var wall=InstanceModel("Wall",null);
             wall.transform.position=new Vector3(7.55f,2.6f,-3.85f);
+            foreach(var mesh in wall.GetComponentsInChildren<MeshRenderer>(true)) finishes.Apply(mesh,true);
             var groups=wall.GetComponentsInChildren<Transform>(true);
             tour.Full=groups.Single(g=>g.name=="Full").gameObject;
             tour.Cutaway=groups.Single(g=>g.name=="Cutaway").gameObject;
@@ -131,8 +136,9 @@ public static class HouseBuild
             for(float x=-3;x<=27;x+=2.5f) for(float z=-16;z<=2;z+=2.5f) foreach(float y in new[]{.35f,1.7f,3.1f,4.25f,6.5f}) probePoints.Add(new Vector3(x,y,z));
             new GameObject("Baked daylight probes").AddComponent<LightProbeGroup>().probePositions=probePoints.ToArray();
             var lighting = new LightingSettings { bakedGI = true, realtimeGI = false,
-                lightmapResolution = 8, lightmapMaxSize = 1024, directSampleCount = 16,
-                indirectSampleCount = 32, environmentSampleCount = 32, maxBounces = 2 };
+                lightmapResolution = 24, lightmapMaxSize = 2048, lightmapPadding = 4, directSampleCount = 64,
+                indirectSampleCount = 256, environmentSampleCount = 128, maxBounces = 4,
+                ao=true, aoMaxDistance=.55f, aoExponentIndirect=.28f, aoExponentDirect=0 };
             Lightmapping.lightingSettings=lighting;
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(),ScenePath);
             if (!Lightmapping.Bake() || LightmapSettings.lightmaps.Length == 0 || LightmapSettings.lightProbes == null || LightmapSettings.lightProbes.count == 0) throw new BuildFailedException("Daylight bake failed.");
@@ -173,6 +179,14 @@ public static class HouseBuild
         foreach (var feature in xr.GetFeatures<OpenXRFeature>())
         {
             string type = feature.GetType().Name;
+            if(feature is AutomaticDynamicResolutionFeature){
+                feature.enabled=true;
+                var resolution=new SerializedObject(feature);
+                resolution.FindProperty("m_MinResolutionScalar").floatValue=.85f;
+                resolution.FindProperty("m_MaxResolutionScalar").floatValue=1.20f;
+                resolution.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(feature);
+            }
             if (type == "OculusTouchControllerProfile" || type == "MetaQuestTouchPlusControllerProfile"
                 || type == "MetaQuestFeature")
             {
@@ -191,8 +205,9 @@ public static class HouseBuild
         var slots=PlayerSettings.GetPlatformIcons(target,kind);
         foreach(var slot in slots)slot.SetTextures(background,foreground);
         PlayerSettings.SetPlatformIcons(target,kind,slots);
-        PlayerSettings.bundleVersion = "1.2.0";
-        PlayerSettings.Android.bundleVersionCode = 4;
+        PlayerSettings.colorSpace=ColorSpace.Linear;
+        PlayerSettings.bundleVersion = "1.3.0";
+        PlayerSettings.Android.bundleVersionCode = 5;
         PlayerSettings.productName = "Platypus House VR";
         PlayerSettings.SetApplicationIdentifier(target, "com.platypushouse.vr");
         PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
@@ -217,6 +232,11 @@ public static class HouseBuild
             pipeline.shadowDistance = 0;
             AssetDatabase.CreateAsset(pipeline, path);
         }
+        var urpSettings=new SerializedObject(pipeline);
+        urpSettings.FindProperty("m_ReflectionProbeBoxProjection").boolValue=true;
+        urpSettings.ApplyModifiedPropertiesWithoutUndo();
+        pipeline.msaaSampleCount=4;
+        EditorUtility.SetDirty(pipeline);
         GraphicsSettings.defaultRenderPipeline = pipeline;
         QualitySettings.renderPipeline = pipeline;
         if (!greybox)
@@ -226,7 +246,7 @@ public static class HouseBuild
         }
     }
 
-    private static void InstallHouse()
+    private static void InstallHouse(HouseSurfaces finishes)
     {
         var model = InstanceModel("House", null);
         // IfcConvert rotates Z-up geometry to glTF. glTFast flips X for Unity.
@@ -248,10 +268,22 @@ public static class HouseBuild
                 bool floor=entry[1]=="IFCSLAB" && (entry[2].StartsWith("Floor:") || entry[2].StartsWith("Foundation Slab:"));
                 mesh.gameObject.layer=floor ? HouseTour.Walkable : 0;
                 mesh.gameObject.name=entry[2]+" ["+node.name+"]";
+                if(entry[2].StartsWith("Undercroft Rainwater Tank:")) {
+                    // The probe at the centre of a closed tank is in shadow. Sample the
+                    // open undercroft beside its shell to shade the narrow rolled ribs.
+                    var anchor=new GameObject("Undercroft daylight sample").transform;
+                    anchor.SetParent(mesh.transform,false);
+                    var shell=mesh.bounds;
+                    anchor.position=new Vector3(shell.center.x,shell.center.y,shell.max.z+.25f);
+                    mesh.probeAnchor=anchor;
+                }
             }
+            finishes.Apply(mesh);
             if(mesh.sharedMaterials.All(m=>m!=null && m.renderQueue<3000)) {
-                mesh.receiveGI = ReceiveGI.LightProbes;
-                mesh.scaleInLightmap = 0;
+                bool mapped=mesh.GetComponent<MeshFilter>().sharedMesh.HasVertexAttribute(VertexAttribute.TexCoord1);
+                mesh.stitchLightmapSeams=mapped;
+                mesh.receiveGI = mapped ? ReceiveGI.Lightmaps : ReceiveGI.LightProbes;
+                mesh.scaleInLightmap = mapped ? 1 : 0;
                 GameObjectUtility.SetStaticEditorFlags(mesh.gameObject, StaticEditorFlags.ContributeGI | StaticEditorFlags.BatchingStatic);
             }
             bounds.Encapsulate(mesh.bounds);
@@ -323,6 +355,7 @@ public static class HouseBuild
         head.transform.SetParent(offset.transform, false);
         head.transform.localPosition = Vector3.up * 1.62f;
         var camera = head.AddComponent<Camera>();
+        camera.allowDynamicResolution=true;
         camera.nearClipPlane = 0.055f;
         camera.farClipPlane = 80f;
         camera.clearFlags = CameraClearFlags.SolidColor;

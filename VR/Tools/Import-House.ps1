@@ -18,14 +18,6 @@ $target = Join-Path $work.FullName 'House.glb'
 & $IfcConvert -y -j 4 --use-element-guids --building-local-placement $snapshot $target
 if ($LASTEXITCODE -or !(Test-Path -LiteralPath $target)) { throw 'IFC conversion failed.' }
 
-Copy-Item -LiteralPath $target -Destination (Join-Path $root 'Assets/Models/House.glb') -Force
-[ordered]@{
-    exportTimestamp = $export
-    sha256 = (Get-FileHash -LiteralPath $snapshot).Hash
-    converter = $version
-    options = '-y -j 4 --use-element-guids --building-local-placement'
-} | ConvertTo-Json | Set-Content (Join-Path $root 'Tools/HouseSource.json')
-
 
 # Keep Revit product identity alongside the GUID-named glTF nodes.
 $products = foreach ($line in [IO.File]::ReadLines($snapshot)) {
@@ -33,4 +25,18 @@ $products = foreach ($line in [IO.File]::ReadLines($snapshot)) {
         "{0}`t{1}`t{2}" -f $Matches[2], $Matches[1], $Matches[3].Replace("''", "'")
     }
 }
-$products | Set-Content -Encoding utf8 (Join-Path $root 'Tools/HouseElements.tsv')
+$elementTable = Join-Path $work.FullName 'HouseElements.tsv'
+$products | Set-Content -Encoding utf8 $elementTable
+$presentation = Join-Path $work.FullName 'Presentation.glb'
+& uv run --script (Join-Path $PSScriptRoot 'Finish-House.py') $target $snapshot $elementTable $presentation
+if ($LASTEXITCODE) { throw 'Quest finish and UV preparation failed.' }
+
+[ordered]@{
+    exportTimestamp = $export
+    sha256 = (Get-FileHash -LiteralPath $snapshot).Hash
+    converter = $version
+    options = '-y -j 4 --use-element-guids --building-local-placement'
+} | ConvertTo-Json | Set-Content (Join-Path $work.FullName 'HouseSource.json')
+Copy-Item -LiteralPath $presentation -Destination (Join-Path $root 'Assets/Models/House.glb') -Force
+Copy-Item -LiteralPath $elementTable -Destination $PSScriptRoot -Force
+Copy-Item -LiteralPath (Join-Path $work.FullName 'HouseSource.json') -Destination $PSScriptRoot -Force
