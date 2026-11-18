@@ -12,7 +12,7 @@ public sealed class HouseTour : MonoBehaviour
     public XROrigin Origin;
     public LineRenderer Beam;
     public Transform[] Stops;
-    public Transform[] StairLandings;
+    public Transform HeightAdjustment;
     public GameObject Full, Cutaway;
     public Texture2D[] Plans;
     public Rect MapBounds;
@@ -82,7 +82,10 @@ public sealed class HouseTour : MonoBehaviour
 
     Hand left,right,active,teleportHand;
     TourPanel menu,wall;
-    readonly TourPanel[] stairSigns = new TourPanel[2];
+    readonly TourPanel[] routeSigns = new TourPanel[4];
+    XRDisplaySubsystem display;
+    bool displayFocused=true, applicationFocused=true, paused, consumeResumeInput;
+    float launchTime;
     Transform head;
     TextMeshProUGUI playerMarker;
     LineRenderer ring;
@@ -92,6 +95,7 @@ public sealed class HouseTour : MonoBehaviour
     float fade, dwellTime, lookDownTime;
     Collider dwellTarget;
     bool gazeMode, lookDownLatched;
+    static readonly Vector2 MapSize=new Vector2(416,312);
     const float DwellSeconds = 1.1f;
     static readonly string[] States = {"Finished","Cutaway","Framing"};
     static readonly string[] Notes = {
@@ -104,9 +108,32 @@ public sealed class HouseTour : MonoBehaviour
     readonly Vector3[] arc = new Vector3[49];
 
     void OnEnable() { left = new Hand(XRNode.LeftHand); right = new Hand(XRNode.RightHand); active = right; }
-    void OnDisable() { teleportHand = null; }
+    void OnDisable() {
+        teleportHand = null;
+        if(display!=null) display.displayFocusChanged-=OnDisplayFocus;
+        display=null;
+    }
+    void ObserveDisplay(){
+        if(display!=null) return;
+        var displays=new System.Collections.Generic.List<XRDisplaySubsystem>();
+        SubsystemManager.GetSubsystems(displays);
+        display=displays.Find(d=>d.running);
+        if(display!=null) display.displayFocusChanged+=OnDisplayFocus;
+    }
+    void OnDisplayFocus(bool focused){displayFocused=focused;ResetInput();}
+    void OnApplicationFocus(bool focused){applicationFocused=focused;ResetInput();}
+    void OnApplicationPause(bool isPaused){paused=isPaused;ResetInput();}
+    void ResetInput(){
+        teleportHand=null; dwellTarget=null; dwellTime=lookDownTime=fade=0;
+        stickLatched=lookDownLatched=consumeResumeInput=true;
+        if(Beam!=null) Beam.enabled=false;
+        if(ring!=null) ring.enabled=false;
+        if(shade!=null) shade.alpha=0;
+    }
     void Start()
     {
+        launchTime=Time.realtimeSinceStartup;
+        ObserveDisplay();
         pointerColors=new MaterialPropertyBlock();
         Application.targetFrameRate=72;
         head=Origin.Camera.transform;
@@ -128,20 +155,21 @@ public sealed class HouseTour : MonoBehaviour
         pixels.Apply(); mask.GetComponent<UnityEngine.UI.RawImage>().texture=pixels;
         shade=overlay.GetComponent<CanvasGroup>(); shade.alpha=0;
         menu.gameObject.SetActive(false);
-        for(int i=0;i<StairLandings.Length;i++){
-            int destination=1-i;
-            var here=StairLandings[i];
-            var sign=TourPanel.Create(i==0?"Stair foot":"Deck landing",new Vector2(640,200));
-            stairSigns[i]=sign;
-            sign.transform.position=here.position + new Vector3(i==0?-.4f:.4f,1.35f,.48f);
-            sign.transform.rotation=Quaternion.LookRotation(Vector3.ProjectOnPlane(sign.transform.position-here.position,Vector3.up));
-            sign.Text("South stair",0,55,570,65,35);
-            sign.Button(i==0?"Go up to south deck":"Go down to ground",0,-40,570,()=>Move(StairLandings[destination],true));
+        string[] next={"Go up to south deck","Enter the house","Explore living room","Visit north deck"};
+        for(int i=0;i<routeSigns.Length;i++){
+            int destination=i+1;
+            var here=Stops[i];
+            var sign=TourPanel.Create("Wayfinder - "+here.name,new Vector2(720,222));
+            routeSigns[i]=sign;
+            var direction=here.forward*1.05f+here.right*.42f;
+            sign.transform.SetPositionAndRotation(here.position+direction+Vector3.up*1.42f,Quaternion.LookRotation(direction));
+            sign.Text(here.name,0,58,640,68,38);
+            sign.Button(next[i],0,-45,646,()=>Move(Stops[destination],true));
         }
         if(Full!=null) {
             wall=TourPanel.Create("North deck wall exhibit",new Vector2(1120,405));
             wall.transform.position=new Vector3(7.55f,3.95f,-3.18f);
-            wall.transform.rotation=Quaternion.LookRotation(Vector3.ProjectOnPlane(wall.transform.position-Stops[1].position,Vector3.up));
+            wall.transform.rotation=Quaternion.LookRotation(Vector3.ProjectOnPlane(wall.transform.position-Stops[4].position,Vector3.up));
             DrawWall();
         }
     }
@@ -158,6 +186,24 @@ public sealed class HouseTour : MonoBehaviour
         wall.Text(Notes[wallState],0,-78,1030,100,36);
     }
 
+    void ShowNearbySign()
+    {
+        int nearest=-1;
+        float closest=2.5f*2.5f;
+        if(!menu.gameObject.activeSelf){
+            var feet=new Vector3(head.position.x,Origin.transform.position.y,head.position.z);
+            for(int i=0;i<Stops.Length;i++){
+                var delta=Stops[i].position-feet;
+                if(Mathf.Abs(delta.y)>.4f || delta.sqrMagnitude>=closest)continue;
+                closest=delta.sqrMagnitude; nearest=i;
+            }
+        }
+        for(int i=0;i<routeSigns.Length;i++){
+            bool visible=i==nearest;
+            if(routeSigns[i].gameObject.activeSelf!=visible)routeSigns[i].gameObject.SetActive(visible);
+        }
+    }
+
     void PlacePanel()
     {
         var f=Vector3.ProjectOnPlane(head.forward,Vector3.up).normalized;
@@ -169,15 +215,18 @@ public sealed class HouseTour : MonoBehaviour
         menu.transform.localScale=Vector3.one*(.001f*distance/1.48f);
         menu.transform.SetPositionAndRotation(head.position+f*distance-Vector3.up*.07f,Quaternion.LookRotation(f));
         menu.gameObject.SetActive(true);
+        ShowNearbySign();
     }
 
     void Welcome()
     {
         PlacePanel(); menu.Clear();
-        menu.Text("Platypus House",0,242,1050,95,69);
-        menu.Text("You are in the undercroft",0,139,1050,78,47);
-        menu.Text("Point and squeeze the trigger. Push the stick forward and release to move. A or X opens Places.\nWithout a pointer, look at a button and hold. Look down to reopen Places.",0,-35,1050,224,36);
-        menu.Button("Explore the house",0,-250,560,()=>{if(gazeMode)Places(CurrentLevel());else CloseMenu();});
+        menu.Text("Platypus House",0,284,1050,80,66);
+        menu.Text("build by Digital Media Design Team - COVE RMIT",0,201,1050,55,34);
+        menu.Text("Start at the south stair",0,102,1050,74,48);
+        menu.Text("Follow the signs through the open door. Push the stick forward and release to move. A or X opens Places.\nWithout a controller, look at a button and hold.",0,-38,1050,182,36);
+        menu.Button("Go up to south deck",-233,-239,558,()=>Move(Stops[1],true));
+        menu.Button("Explore from here",300,-239,445,CloseMenu);
     }
 
     void CloseMenu(){ menu.gameObject.SetActive(false); playerMarker=null; }
@@ -189,20 +238,31 @@ public sealed class HouseTour : MonoBehaviour
         menu.Button("Close",405,283,220,CloseMenu);
         menu.Button(level==0?"• Ground":"Ground",-380,181,254,()=>Places(0),level==0);
         menu.Button(level==1?"• First floor":"First floor",-98,181,282,()=>Places(1),level==1);
-        var panelMap=menu.Picture(Plans[level],new Vector2(-237,-24),new Vector2(560,289));
+        var panelMap=menu.Picture(Plans[level],new Vector2(-237,-24),MapSize);
         for(int i=0;i<Stops.Length;i++){
-            if((i==0?0:1)!=level)continue;
+            if((Stops[i].position.y>1.3f?1:0)!=level)continue;
             var location=Stops[i].position;
-            float x=(Mathf.InverseLerp(MapBounds.xMin,MapBounds.xMax,location.x)-.5f)*560;
-            float y=(Mathf.InverseLerp(MapBounds.yMin,MapBounds.yMax,location.z)-.5f)*289;
+            float x=(Mathf.InverseLerp(MapBounds.xMin,MapBounds.xMax,location.x)-.5f)*MapSize.x;
+            float y=(Mathf.InverseLerp(MapBounds.yMin,MapBounds.yMax,location.z)-.5f)*MapSize.y;
             menu.Text((i+1).ToString(),x,y,31,31,25,true,panelMap);
         }
         playerMarker=menu.Text("▲",0,0,46,46,37,true,panelMap);
         playerMarker.color=new Color32(255,202,70,255);
         menu.Text(level==CurrentLevel()?"▲  You are here":"You are on the other level",-237,-202,560,50,29,true);
-        for(int i=0;i<Stops.Length;i++){ int stop=i; menu.Button((i+1)+"   "+Stops[i].name,322,99-i*105,394,()=>Move(Stops[stop],true)); }
-        menu.Button(vignette?"Turn shade: on":"Turn shade: off",-298,-285,430,()=>{vignette=!vignette;Places(level);},vignette);
-        menu.Button("Recenter view",233,-285,422,Recenter);
+        int row=0;
+        for(int i=0;i<Stops.Length;i++){
+            if((Stops[i].position.y>1.3f?1:0)!=level)continue;
+            int stop=i;
+            menu.Button((i+1)+"   "+Stops[i].name,322,142-row++*94,394,()=>Move(Stops[stop],true));
+        }
+        menu.Button(vignette?"Shade on":"Shade off",-395,-285,280,()=>{vignette=!vignette;Places(level);},vignette);
+        menu.Button("Recenter", -72,-285,268,Recenter);
+        bool adjusted=Mathf.Abs(HeightAdjustment.localPosition.y)>.005f;
+        menu.Button(adjusted?"Use tracked height":"Set eye to 1.70 m",288,-285,406,()=>{
+            if(adjusted) HeightAdjustment.localPosition=Vector3.zero;
+            else SetTourHeight();
+            PlacePanel(); Places(level);
+        });
         UpdateMarker();
     }
 
@@ -215,8 +275,13 @@ public sealed class HouseTour : MonoBehaviour
         if(!same)return;
         float u=Mathf.InverseLerp(MapBounds.xMin,MapBounds.xMax,head.position.x);
         float v=Mathf.InverseLerp(MapBounds.yMin,MapBounds.yMax,head.position.z);
-        playerMarker.rectTransform.anchoredPosition=new Vector2((u-.5f)*560,(v-.5f)*289);
+        playerMarker.rectTransform.anchoredPosition=new Vector2((u-.5f)*MapSize.x,(v-.5f)*MapSize.y);
         playerMarker.rectTransform.localRotation=Quaternion.Euler(0,0,-head.eulerAngles.y);
+    }
+
+    void SetTourHeight(){
+        float tracked=head.position.y-Origin.transform.position.y-HeightAdjustment.localPosition.y;
+        HeightAdjustment.localPosition=Vector3.up*Mathf.Clamp(1.70f-tracked,-.5f,1.2f);
     }
 
     void Recenter()
@@ -254,10 +319,18 @@ public sealed class HouseTour : MonoBehaviour
 
     void Update()
     {
-        if(!started){started=true; Welcome();}
+        if(!applicationFocused || !displayFocused || paused)return;
+        if(!started){
+            bool tracking=InputDevices.GetDeviceAtXRNode(XRNode.Head).TryGetFeatureValue(UnityEngine.XR.CommonUsages.isTracked,out var tracked) && tracked;
+            if(Application.platform==RuntimePlatform.Android && !tracking && Time.realtimeSinceStartup-launchTime<2.5f)return;
+            ObserveDisplay(); started=true;
+            if(head.position.y-Origin.transform.position.y<1.65f)SetTourHeight();
+            Move(Stops[0],true); Welcome();
+        }
         fade=Mathf.MoveTowards(fade,0,Time.unscaledDeltaTime*4); shade.alpha=fade;
-        UpdateMarker();
+        ShowNearbySign(); UpdateMarker();
         left.Sample(); right.Sample();
+        if(consumeResumeInput){consumeResumeInput=false;return;}
         if(left.Select || left.Places || left.Axis.sqrMagnitude>.4f) active=left;
         else if(right.Select || right.Places || right.Axis.sqrMagnitude>.4f) active=right;
         if(teleportHand!=null)active=teleportHand;
@@ -303,7 +376,7 @@ public sealed class HouseTour : MonoBehaviour
         bool onMenu=menu.gameObject.activeSelf && menu.Point(collider);
         bool onWall=wall!=null && wall.Point(collider);
         TourPanel stair=null;
-        foreach(var sign in stairSigns) if(sign!=null && sign.Point(collider)) stair=sign;
+        foreach(var sign in routeSigns) if(sign!=null && sign.Point(collider)) stair=sign;
         Color color=onMenu||onWall||stair!=null?Color.cyan:Color.white;
         Beam.enabled=controller; Beam.positionCount=2; Beam.SetPosition(0,ray.origin);Beam.SetPosition(1,ray.GetPoint(hit?target.distance:4));
         PaintPointer(Beam,color);

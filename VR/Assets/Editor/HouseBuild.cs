@@ -76,15 +76,9 @@ public static class HouseBuild
         sun.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
 
         var solid = Material("Courtyard", new Color(.30f,.33f,.29f),"Universal Render Pipeline/Lit");
-        var ground = Box("Ground", new Vector3(11f, -.165f, -6f), new Vector3(40f,.25f,30f), solid,null);
-        // Keep the visual soil 40 mm below the IFC slab and footing faces at elevation zero.
-        // Only the space below the house and the stair foot are approved ground landings.
-        ground.layer = 0;
+        var ground = Box("Ground", new Vector3(11f, -.127f, -6f), new Vector3(40f,.25f,30f), solid,null);
+        ground.layer = HouseTour.Walkable;
         GameObjectUtility.SetStaticEditorFlags(ground,StaticEditorFlags.ContributeGI);
-        ground.GetComponent<Collider>().enabled = false;
-        GroundArea("Undercroft floor", new Vector3(11.3f, -.05f,-7.45f),new Vector3(25.4f,.1f,6f));
-        GroundArea("Outdoor approach",new Vector3(17.78f,-.05f,-11.55f),new Vector3(2.74f,.10f,7.3f));
-        GroundArea("Stair foot",new Vector3(17.9f,-.05f,-14.15f),new Vector3(2.5f,.1f,1.9f));
         if (greybox) {
             var upper = Box("Upper floor",new Vector3(11,2.45f,-6),new Vector3(13,.3f,19),solid,null);
             upper.layer = HouseTour.Walkable;
@@ -101,17 +95,23 @@ public static class HouseBuild
 
         var tour = CreateRig();
         tour.Stops = new[] {
-            Stop("Undercroft", new Vector3(9.3f,0,-5.65f),115),
+            Stop("Stair foot", new Vector3(18.30f,-.002f,-14.15f),270),
+            Stop("South deck",new Vector3(13.04f,2.6f,-14.15f),336),
+            Stop("Entrance",new Vector3(11.36f,2.6f,-9.64f),0),
+            Stop("Living room",new Vector3(10.1f,2.6f,-5.4f),70),
             Stop("North deck",new Vector3(8.55f,2.6f,-2.65f),223),
-            Stop("Living room",new Vector3(10.1f,2.6f,-5.4f),145)
+            Stop("Undercroft",new Vector3(9.3f,0,-5.65f),115)
         };
-        tour.StairLandings = new[] {
-            Stop("Bottom landing",new Vector3(17.52f,0,-14.15f),270),
-            Stop("Top landing",new Vector3(13.04f,2.6f,-14.15f),270)
-        };
-        if(!greybox) ValidateLandings(tour.Stops.Concat(tour.StairLandings).ToArray());
+        if(!greybox) {
+            ValidateLandings(tour.Stops);
+            ValidatePassage("south entrance",11.36f,-10.45f);
+            ValidatePassage("north deck",11.36f,-4.49f);
+            ValidateLandings(new[]{Stop("West grounds",new Vector3(-6,-.002f,-6),0),
+                Stop("North grounds",new Vector3(11,-.002f,5),0), Stop("East grounds",new Vector3(29,-.002f,-6),0),
+                Stop("South grounds",new Vector3(11,-.002f,-19),0)});
+        }
         tour.Origin.transform.SetPositionAndRotation(tour.Stops[0].position,tour.Stops[0].rotation);
-        tour.MapBounds=new Rect(-4,-16,32,16.5f);
+        tour.MapBounds=new Rect(-9,-21,40,30);
         tour.Plans=new[]{ MakePlan(tour.MapBounds,0,greybox),MakePlan(tour.MapBounds,1,greybox) };
         if (!greybox) {
             var wall=InstanceModel("Wall",null);
@@ -181,8 +181,18 @@ public static class HouseBuild
             }
         }
 
-        PlayerSettings.bundleVersion = "1.1.1";
-        PlayerSettings.Android.bundleVersionCode = 3;
+        PlayerSettings.runInBackground = true;
+        var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/HouseIcon.png");
+        if(icon==null) throw new BuildFailedException("Launcher icon missing");
+        var foreground=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/LogoForeground.png");
+        var background=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/LogoBackground.png");
+        PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown,new[]{icon});
+        var kind=UnityEditor.Android.AndroidPlatformIconKind.Adaptive;
+        var slots=PlayerSettings.GetPlatformIcons(target,kind);
+        foreach(var slot in slots)slot.SetTextures(background,foreground);
+        PlayerSettings.SetPlatformIcons(target,kind,slots);
+        PlayerSettings.bundleVersion = "1.2.0";
+        PlayerSettings.Android.bundleVersionCode = 4;
         PlayerSettings.productName = "Platypus House VR";
         PlayerSettings.SetApplicationIdentifier(target, "com.platypushouse.vr");
         PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
@@ -231,6 +241,10 @@ public static class HouseBuild
             while(node!=null && !elements.ContainsKey(node.name)) node=node.parent;
             if(node!=null) {
                 var entry=elements[node.name];
+                if(entry[1]=="IFCDOOR" && entry[2].Contains("Aluminium Sliding Door - 3 Panel")){
+                    var filter=mesh.GetComponent<MeshFilter>();
+                    filter.sharedMesh=OpenSlider(filter.sharedMesh,node.name,entry[2]);
+                }
                 bool floor=entry[1]=="IFCSLAB" && (entry[2].StartsWith("Floor:") || entry[2].StartsWith("Foundation Slab:"));
                 mesh.gameObject.layer=floor ? HouseTour.Walkable : 0;
                 mesh.gameObject.name=entry[2]+" ["+node.name+"]";
@@ -251,6 +265,40 @@ public static class HouseBuild
         PrefabUtility.SaveAsPrefabAssetAndConnect(model, prefabPath, InteractionMode.AutomatedAction);
     }
 
+    // The centre leaf of each three-panel Revit slider runs on its own 18�58 mm track.
+    // Translate the original glass and sash together. The outer leaves, jambs and sill stay in place.
+    private static Mesh OpenSlider(Mesh source,string guid,string description)
+    {
+        var slide=UnityEngine.Object.Instantiate(source);
+        var vertices=slide.vertices;
+        float width=description.Contains("4320 x") ? 4.320f : 4.315f;
+        int moved=0;
+        for(int i=0;i<vertices.Length;i++){
+            var v=vertices[i];
+            float x=Mathf.Abs(v.x);
+            if(x<width/3f-.03f || x>2f*width/3f+.03f || v.y<.017f || v.y>.059f) continue;
+            vertices[i].x+=Mathf.Sign(v.x)*(width/3f-.05f);
+            moved++;
+        }
+        if(moved==0) throw new BuildFailedException("Centre slider leaf not found: "+description);
+        slide.vertices=vertices; slide.RecalculateBounds();
+        string path=Generated+"/OpenSlider-"+guid+".asset";
+        var existing=AssetDatabase.LoadAssetAtPath<Mesh>(path);
+        if(existing==null){AssetDatabase.CreateAsset(slide,path);return slide;}
+        EditorUtility.CopySerialized(slide,existing);
+        UnityEngine.Object.DestroyImmediate(slide);
+        return existing;
+    }
+
+    private static void ValidatePassage(string name,float x,float z)
+    {
+        Physics.SyncTransforms();
+        var start=new Vector3(x,2.6f,z-.58f);
+        if(Physics.CapsuleCast(start+Vector3.up*.34f,start+Vector3.up*1.62f,.24f,Vector3.forward,out var hit,1.16f,HouseTour.WorldMask))
+            throw new BuildFailedException(name+" blocked by "+hit.collider.name);
+        Debug.Log("Clear manual doorway: "+name);
+    }
+
     private static GameObject InstanceModel(string name, Transform parent)
     {
         string path = $"Assets/Models/{name}.glb";
@@ -266,8 +314,10 @@ public static class HouseBuild
     private static HouseTour CreateRig()
     {
         var root = new GameObject("XR Origin");
+        var height=new GameObject("Tour height");
+        height.transform.SetParent(root.transform,false);
         var offset = new GameObject("Tracking Space");
-        offset.transform.SetParent(root.transform, false);
+        offset.transform.SetParent(height.transform, false);
         var head = new GameObject("Main Camera");
         head.tag = "MainCamera";
         head.transform.SetParent(offset.transform, false);
@@ -285,10 +335,12 @@ public static class HouseBuild
 
         var origin = root.AddComponent<XROrigin>();
         origin.Camera = camera;
+        origin.CameraYOffset=1.70f;
         origin.CameraFloorOffsetObject = offset;
         origin.RequestedTrackingOriginMode = XROrigin.TrackingOriginMode.Floor;
         var tour = root.AddComponent<HouseTour>();
         tour.Origin = origin;
+        tour.HeightAdjustment=height.transform;
         tour.Beam = new GameObject("Controller aim").AddComponent<LineRenderer>();
         tour.Beam.gameObject.transform.SetParent(offset.transform,false);
         tour.Beam.positionCount = 2;
@@ -327,14 +379,6 @@ public static class HouseBuild
         var face=new GameObject("Balustrade collision");
         face.transform.position=center;
         face.AddComponent<BoxCollider>().size=size;
-    }
-
-    private static void GroundArea(string name,Vector3 center,Vector3 size)
-    {
-        var go=new GameObject(name);
-        go.transform.position=center;
-        go.layer=HouseTour.Walkable;
-        go.AddComponent<BoxCollider>().size=size;
     }
 
     private static Texture2D MakePlan(Rect bounds,int level,bool greybox)

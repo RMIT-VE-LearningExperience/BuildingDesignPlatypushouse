@@ -1,10 +1,10 @@
 # Platypus House VR
 
-The Quest 3 tour starts in the undercroft. Point a controller at **Explore the house** and squeeze the trigger. Use either thumbstick to move. Push forward, aim at the floor and release over a valid landing ring. Push sideways for a 30° snap turn.
+The Quest tour starts at the foot of the south stair. Follow the signs up to the south deck, through the open entrance, into the living room and out to the north deck wall exhibit. Select **Explore from here** to move independently. Both central deck sliders stay open. The ground under and around the house is walkable and sits 2 mm below the concrete.
 
-If both controllers lose tracking, a gaze reticle appears. Look at a button for about a second to select it. Look down for about a second, then look up to reopen Places. A tracked controller takes over when it returns.
+Point a controller and squeeze the trigger to select. Push a thumbstick forward, aim at the floor and release over a valid landing ring. Push sideways for a 30� snap turn. Without tracked controllers, look at a button for about a second. Look down and back up to reopen Places.
 
-Press **A** or **X** to open **Places**. Choose a named stop to travel directly, switch between the ground and first-floor plans, or use **Recenter view**. The map marks your position and facing direction on the current floor. Optional turn shading is available here. The signs at the south staircase link its two landings. At the north deck, select **Finished**, **Cutaway** or **Framing** to inspect the wall.
+Press **A** or **X** for **Places**. The map shows destinations on each floor, including the undercroft. Use **Set eye to 1.70 m** or **Use tracked height** to switch between an adjusted and a physical eye level. A low initial viewpoint is adjusted for the tour. At the north deck, select **Finished**, **Cutaway** or **Framing**.
 
 ## Build the APK
 
@@ -21,4 +21,4 @@ Press **A** or **X** to open **Places**. Choose a named stop to travel directly,
 
 ## Headset acceptance
 
-Run undercroft → north deck → living room → undercroft twice. Try each hand, both stair signs, each wall state, a snap turn in each direction and the map. Check that the visible reticle selects the indicated button, labels are readable at normal distance and the rooms remain evenly lit. Test untethered and measure frame timing against 13.9 ms per frame at 72 Hz.
+Start at the stair foot, follow the forward route and manually teleport through both open sliders. Explore all four sides of the site. Check the pointer on both hands, gaze selection, eye height, all three wall states, and text at normal distance. Open the Meta menu and resume. Verify that head tracking remains stable and that tour buttons ignore system-menu input. Test untethered and measure frame timing against 13.9 ms at 72 Hz.
