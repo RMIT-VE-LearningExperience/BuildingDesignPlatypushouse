@@ -6,8 +6,8 @@ The VR model uses the teacher's building, terrain, driveway, planting and furnis
 
 ## Building
 
-1. Obtain access to the teacher's original RVT. The source used for this release has SHA-256 `6f7005458f6de008e7ac56a3ad58934f354c3600b4372cb95f597cbcc7f36b9a`.
-2. With Revit 2027.2, a .NET SDK supporting net10.0-windows and uv installed, run `./Tools/Refresh-Teacher.ps1 -Source 'path/to/BD1X_AT3_Example File 2.rvt'`. It opens a temporary copy in a separate Revit process and writes `VR/Assets/Models/TeacherHouse.glb`.
+1. On the `teacher/quest-tour` branch, run `git lfs pull` to download `Source/BD1X_AT3_Example File 2.rvt`. The source used for this release has SHA-256 `6f7005458f6de008e7ac56a3ad58934f354c3600b4372cb95f597cbcc7f36b9a`.
+2. With Revit 2027.2, a .NET SDK supporting net10.0-windows and uv installed, run `./Tools/Refresh-Teacher.ps1 -Source './Source/BD1X_AT3_Example File 2.rvt'`. It opens a temporary copy in a separate Revit process and writes `VR/Assets/Models/TeacherHouse.glb`.
 3. Open `VR` with Unity 6000.6.9f1 and Android Build Support. Choose **Teacher Example → Build Quest APK**. The build checks six landings and both deck openings, generates floor maps, bakes daylight, and writes `VR/Builds/TeacherPlatypusHouse.apk`.
 4. For the automated tour check, launch Unity in batch mode with `-projectPath VR -buildTarget Android -executeMethod TeacherPreview.Verify`. This captures four views in `VR/Builds/Review` and tests navigation, controller and gaze selection, floor maps and menu focus.
 

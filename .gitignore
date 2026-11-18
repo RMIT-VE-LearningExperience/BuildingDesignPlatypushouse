@@ -1,7 +1,8 @@
-/Source/
+/Source/*
+!/Source/BD1X_AT3_Example File 2.rvt
 **/bin/
 **/obj/
-# Rebuild private model geometry and scene data from the teacher's local RVT.
+# Rebuild generated geometry and scene data from the teacher model.
 /VR/Assets/Models/TeacherHouse.glb
 /VR/Assets/HouseTour.unity
 /VR/Assets/HouseTour/
