@@ -9,6 +9,7 @@ How the Revit model in this repo is put together, written so the house can be re
 | `BD1X_AT3_Example File 1.pdf` | The source drawing set (12 A3 sheets, A01–A12). The model is built from this. |
 | `Platypus House.rvt` | Revit 2027 model (Git LFS). Will not open in Revit 2026 or earlier. |
 | `Platypus House.ifc` | IFC 2x3 Coordination View 2.0 export of the `.rvt`, for older Revit and other tools. Re-export after every model change. |
+| `Platypus House - Sheets A01-A12.pdf` | The model's drawing set, A3, exported from Revit (sheet set "All Sheets"). |
 
 ## Coordinates and units
 
@@ -24,7 +25,7 @@ How the Revit model in this repo is put together, written so the house can be re
 | Sub Floor | 0 | Ground / top of slab and pad footings |
 | First Floor | 2600 | Finished floor level of house and decks |
 | Roof Pitching Point | 5000 | Top of wall plate; 2400 floor-to-plate |
-| Ridge | 7035 | Top of gable roof |
+| Ridge | 7035 | Top of gable roof. A Revit level for the 2035 and 7035 dimensions on the elevations and sections; not a building storey, so the IFC still has two storeys. |
 
 ## Grids
 
@@ -74,8 +75,8 @@ Walls run from First Floor to 5000 (2400 high). The two gable end walls continue
 - Each cantilevered end is carried by a V-brace frame: two longitudinal rakers, two transverse V braces, a 90 x 90 SHS beam and two hang-downs.
 - Three rainwater tanks, 3050 diameter x 2150 high, centred on y -7465 at x 7950, 11360 and 14650.
 - Two slatted U-shaped timber screens, 2200 high, at grids 2–3 and 6–7.
-- Stair: 14 risers at 185.7, 13 goings at 250, 1500 wide, x 13610–16860 at y -14905 to -13405, with handrails both sides.
-- Deck guard railings are 1000 high.
+- Stair (`Platypus - Steel Carriage Stair, Open Risers`): 14 risers at 185.7, 13 goings at 250, 1500 wide, x 13610–16860 at y -14905 to -13405. Open risers with 65 mm hardwood treads (`Hardwood - Stair Tread, Slip Resistant P4/R11`), so the open gap between treads is 120.7 mm, inside the 125 mm limit in the A01 general notes. Two steel carriages (open stringers) set 150 in from each edge.
+- Balustrades (`Platypus - 1000 mm Balustrade - Horizontal Rails`) on both decks and both sides of the stair, as drawn on A05/A06 and in the A12 render: 40 mm round top rail at 1000, nine 12 mm stainless rods at 100 mm centres (100 to 900), 25 mm black square posts at 1150 centres. The largest opening is 88 mm.
 
 ## Rooms (First Floor)
 
@@ -97,24 +98,27 @@ Areas are the figures printed on sheet A04; the areas read back from the model a
 
 ## Doors
 
-| Mark | Size | Location |
-|---|---|---|
-| 01 | 910 x 2340 | Bed 1, in grid 2 wall at the north end |
-| 02 | 910 x 2340 | Between Bed 1 and Bed 2, hard against the grid 2 wall |
-| 03 | 910 x 2340 | Bed 2, in grid 2 wall at the south end |
-| 04 | 910 x 2340 | Bath, south wall onto the hall |
-| 05 | 2000 x 2340 | Laundry cupboard, double doors facing north |
-| 06 | 910 x 2340 | Ensuite from living, in grid 6 wall |
-| 07 | 910 x 2340 | Walk-in robe, north wall |
-| 08 | 910 x 2340 | Ensuite from master bed, in grid 7 wall |
-| — | 1000 x 2340 (x3) | Glazed deck doors: two to the north deck, one to the south deck |
+All doors slide, as sheet A04 draws them. The families were built for this model (see "Window and door families" below).
 
-The model uses hinged door families. Sheet A04 draws every door, including the deck doors, as a sliding panel. Known consequences of the hinged doors:
+| Mark | Family : type | Location | Panel side, opening direction |
+|---|---|---|---|
+| 01 | `Platypus - Wall Slide Door : 910 x 2340` | Bed 1, grid 2 wall at the north end | Bed 1 side, slides south |
+| 02 | `Platypus - Wall Slide Door : 910 x 2340` | Between Bed 1 and Bed 2, hard against the grid 2 wall | Bed 1 side, slides west |
+| 03 | `Platypus - Wall Slide Door : 910 x 2340` | Bed 2, grid 2 wall at the south end | Bed 2 side, slides north |
+| 04 | `Platypus - Wall Slide Door : 910 x 2340` | Bath, south wall onto the hall | Hall side, slides east |
+| 05 | `Platypus - Wall Slide Door - Bypass Pair : 2000 x 2340` | Laundry cupboard, facing north | Lobby side, two panels on two tracks |
+| 06 | `Platypus - Wall Slide Door : 910 x 2340` | Ensuite from living, grid 6 wall | Ensuite side, slides north |
+| 07 | `Platypus - Wall Slide Door : 910 x 2340` | Walk-in robe, north wall | Living side, slides east |
+| 08 | `Platypus - Wall Slide Door : 910 x 2340` | Ensuite from master bed, grid 7 wall | Master bed side, slides north |
+| N1 | `Platypus - Aluminium Sliding Door - 2 Panel : 2665 x 2380` | North deck wall, x 6345 to 9010 | Two leaves on two tracks |
+| N2 | `Platypus - Aluminium Sliding Door - 3 Panel : 4315 x 2380` | North deck wall, x 9200 to 13515 | Three leaves |
+| N3 | `Platypus - Aluminium Sliding Door - 2 Panel : 2700 x 2380` | North deck wall, x 13700 to 16400 | Two leaves |
+| S1 | `Platypus - Aluminium Sliding Door - 3 Panel : 4320 x 2380` | South deck wall, x 9200 to 13520 | Three leaves |
 
-- Door 01 and the west leaf of door 05 both swing into the 915 mm lobby north of the laundry and cross each other.
-- Door 03 is 910 wide in a hall that is 885 clear (bath wall to south wall), so its frame overlaps both walls and Revit reports "Insert conflicts with joined Wall". Door 01 is centred in its 915 lobby (centre y -5002), door 03 in the hall (centre y -9940), door 08 at centre y -9960.
-- Deck door N2 is hinged on its east side so the leaf clears the kitchen island.
-- Every door head trim finishes 40 mm above the 5000 wall top (2340 door plus a fixed 100 mm head). On the south deck door it shows as a 30 mm strip above the awning.
+- Internal doors are 35 mm panels (the thickness in the A04 door schedule) hanging 15 mm off the wall face from a 40 x 45 track that runs the full travel. Each is set 50 % open (instance parameter `Open Percent`), which is how A04 draws them; set 100 for fully open in VR. The panel overlaps the opening by 50 each side and 40 at the head.
+- Door 05's two panels are shown closed; A04 draws both slid to the east.
+- Door 03 is still 910 wide in an 885 hall, so Revit reports "Insert conflicts with joined Wall" (see the teacher note).
+- Deck doors fill each bay of the deck walls between the canopy posts, full height from 2600 to 4980.
 
 ## Joinery and fixtures (First Floor)
 
@@ -192,30 +196,67 @@ The layout and the review fixes were applied with Dynamo Python scripts (Manage 
 
 ## Windows
 
-All fixed glazing, hosted in the external walls.
+Black aluminium, double glazed, laid out from the north, south, east and west elevations on A05 and A06. The floor plan agrees: its thick wall segments are the louvre panels. Each grid bay holds one unit of three equal panels (glass, louvre, glass) with a 50 mm frame and mullions; the ends of the house have single-panel units, glazed to the floor at the corners. Units sit between the 90 mm wall strips on the grid lines.
 
-| Type | Wall | Along-wall extent (mm) | Sill z | Head z |
-|---|---|---|---|---|
-| 2700 x 1900 | East bay (x = 25015) | y -8835 to -6135 | 3050 | 4950 |
-| 1300 x 2240 | North (y = -4425) | x -1350 to -50 | 2690 | 4930 |
-| 2070 x 2240 | North | x 475 to 2545 | 2690 | 4930 |
-| 2050 x 1860 | North | x 3475 to 5525 | 3070 | 4930 |
-| 1150 x 2240 | North | x 6325 to 7475 | 2690 | 4930 |
-| 2070 x 2240 | North | x 9075 to 11145 | 2690 | 4930 |
-| 2220 x 2240 | North | x 11370 to 13590 | 2690 | 4930 |
-| 1910 x 1860 | North | x 16290 to 18200 | 3070 | 4930 |
-| 2100 x 2240 | North | x 19605 to 21705 | 2690 | 4930 |
-| 1450 x 2240 | North | x 22535 to 23985 | 2690 | 4930 |
-| 1280 x 2240 | South main (y = -10505) | x -1370 to -90 | 2690 | 4930 |
-| 2150 x 1970 | South main | x 3430 to 5580 | 2960 | 4930 |
-| 1250 x 2240 | South main | x 9225 to 10475 | 2690 | 4930 |
-| 1250 x 2240 | South main | x 12245 to 13495 | 2690 | 4930 |
-| 2020 x 2240 | South main | x 19750 to 21770 | 2690 | 4930 |
-| 1450 x 2240 | South main | x 22540 to 23990 | 2690 | 4930 |
-| 2700 x 1400 | South pop-out (y = -11315) | x 200 to 2900 | 3500 | 4900 |
-| 2750 x 1340 | South pop-out | x 16690 to 19440 | 3590 | 4930 |
+| Mark | Family : type | Wall | Along-wall extent (mm) | Sill z | Head z |
+|---|---|---|---|---|---|
+| W01 | Fixed : 1310 x 2380 | North (y = -4425) | x -1360 to -50 | 2600 | 4980 |
+| W02 | Louvre Centre : 3000 x 2380 | North | x 45 to 3045 | 2600 | 4980 |
+| W03 | Louvre Centre : 2950 x 2380 | North | x 3135 to 6085 | 2600 | 4980 |
+| W04 | Louvre Centre : 2950 x 2380 | North | x 16630 to 19580 | 2600 | 4980 |
+| W05 | Louvre Centre : 3000 x 2380 | North | x 19670 to 22670 | 2600 | 4980 |
+| W06 | Fixed : 1315 x 2380 | North | x 22765 to 24080 | 2600 | 4980 |
+| W07 | Fixed : 970 x 2380 | East main (x = 24215) | y -5440 to -4470 | 2600 | 4980 |
+| W08 | Louvre Centre : 3820 x 1930 | East bay (x = 25015) | y -9370 to -5550 | 3050 | 4980 |
+| W09 | Fixed : 890 x 2380 | East main | y -10370 to -9480 | 2600 | 4980 |
+| W10 | Fixed : 1400 x 2380 | South main (y = -10505) | x 22770 to 24170 | 2600 | 4980 |
+| W11 | Louvre Centre : 2970 x 2380 | South main | x 19700 to 22670 | 2600 | 4980 |
+| W12 | Louvre Centre : 2950 x 1480 | South pop-out (y = -11315) | x 16595 to 19545 | 3500 | 4980 |
+| W13 | Louvre Centre : 2950 x 2380 | South main | x 3162 to 6112 | 2600 | 4980 |
+| W14 | Louvre Centre : 2930 x 1480 | South pop-out | x 80 to 3010 | 3500 | 4980 |
+| W15 | Fixed : 1305 x 2380 | South main | x -1360 to -55 | 2600 | 4980 |
+| W16 | Fixed : 970 x 2380 | West main (x = -1495) | y -10470 to -9500 | 2600 | 4980 |
+| W17 | Fixed : 970 x 2380 | West main | y -5440 to -4470 | 2600 | 4980 |
 
-Sill and head heights are absolute z; subtract 2600 for height above floor. The elevations show a louvre panel in the middle of most window groups; the model has plain fixed glass there.
+Family names are `Platypus - Aluminium Window - Fixed` and `Platypus - Aluminium Window - Louvre Centre`. Sill and head are absolute z; subtract 2600 for height above floor. Heads stop 20 below the 5000 wall top. Where an elevation draws glazing right into a corner, the unit stops 15 mm inside the 120 mm corner wall, so the corner units are up to 90 mm narrower than they scale.
+
+## Window and door families
+
+All six were built for this model with the Revit API (Dynamo Python), from the standard metric window, door and generic model templates. Every face is locked to reference planes and labelled dimensions, and each family was flex-tested at three sizes before it was loaded.
+
+| Family | Parameters | Geometry |
+|---|---|---|
+| `Platypus - Aluminium Window - Fixed` | Width, Height, Frame Width (50), Frame Material, Glass Material | 50 x 100 frame on the wall centreline; two 6 mm panes with a 12 mm gap |
+| `Platypus - Aluminium Window - Louvre Centre` | as above, plus Louvre Material; Louvre Width = Width / 3 - Frame Width, Louvre Height = Height - 2 x Frame Width | three equal panels; the middle one holds the nested `Platypus Louvre Blades` |
+| `Platypus Louvre Blades` (nested) | Panel Width, Panel Height, Blade Count = rounddown((Panel Height - 60) / 100) + 1 | an array of `Platypus Louvre Blade` (80 deep x 12 thick) at 100 centres |
+| `Platypus - Wall Slide Door` | Width, Height, Thickness (35), Panel Overlap (50), Panel Top Overlap (40), Panel Gap (15), Open Percent (instance), Panel/Track Material | face-mounted panel and top track; jamb lining from the template frame |
+| `Platypus - Wall Slide Door - Bypass Pair` | as above, plus Track Spacing (45) | two panels on two tracks, each covering half the opening plus 25 |
+| `Platypus - Aluminium Sliding Door - 2 Panel` / `- 3 Panel` | Width, Height, Frame Width (50), Meeting Overlap (25), Frame/Glass Material | outer frame; sashes alternate between an outer and inner track and overlap 50 at the meeting stiles |
+
+Materials: `Aluminium - Black Anodised` for frames, mullions and blades; the project `Glass`; `Paint - White Door Panel` for the internal door panels.
+
+## Drawing set (sheets A01–A12)
+
+The sheets follow the example set: same numbers, names, views and scales, on A3.
+
+| Sheet | Content |
+|---|---|
+| A01 Cover Sheet | Title, student and group placeholders, the general notes from the example set, sheet index, hidden-line 3D view |
+| A02 Site Plan | 1:200 roof plan in the 47.31 x 27.68 m site with bearings, crossover, road reserve and driveway, roof and gutter notes, site notes |
+| A03 Sub Floor Plan | 1:100 with grid dimensions, columns, pad footings, slab, tanks, bracing and screens, notes, section marks |
+| A04 First Floor Plan | 1:100 with grid and wall dimension strings, door, window and room tags, fixture labels (CK, SK, WC, FPL, BIR), notes, room schedule and legend |
+| A05 / A06 Elevations | 1:100 north/south and east/west with level dimensions (2600, 2400, 2035, 7035) and material notes; window and door schedules on A06 |
+| A07 Sections | Section AA (cut at x 13470, looking west), Section BB (cut at y -6638, looking north), 3D section box |
+| A08 Details | Footing and roof details at 1:20 (callouts on Section AA) with the construction notes from A08 |
+| A09–A11 Shadow Diagrams | Site plan with shadows at 9am, 12pm and 3pm on 21 June |
+| A12 Rendered Views | Exterior and interior perspectives (realistic display, not rendered) |
+
+- Title block `Platypus A3 Title Block`: an A3 sheet laid out like the course title strip (amendments table, documentation by, RMIT University VE School of Design, project, sheet, date, scale, drawn by, drawing number). It reuses the parameter labels from the standard A1 title block, so the sheet name, number, scale, project name and issue date fill in automatically.
+- Project information: AT3 - PLATYPUS HOUSE; documentation by "Designer", as on the example set.
+- Site location Melbourne (37.81° S, 144.96° E, UTC+10). True north is 35° west of project north, from the boundary bearings on A02 (the 125° boundary runs along +X). The shadow diagrams depend on this.
+- Window types carry type marks WF1–WF6 (fixed) and WL1–WL6 (louvre centre), and every window and door type has a short Description for the schedules.
+- The template's unused sheets (A101–A601, C101, E1xx, G100, M1xx, P1xx, S1xx), its discipline plan views (L1/L2 lighting, power, mechanical, plumbing, structural, working) and their schedules were deleted.
+- Not drawn: trees, and the driveway is only indicative. The A08 details are cut from the model, whose walls, floors and roof are single solids, so the layers are named in the notes rather than drawn.
 
 ## Change log
 
@@ -268,14 +309,28 @@ Method: every element's extents were read from the IFC and checked for clashes, 
 - Room areas read from the model: BATH 8.5, BED 1 14.2, BED 2 16.5, ENSUITE 10.9, HALL 2.7, LDRY 2.0, LIVING 70.3, MASTER BED 28.8, NORTH DECKING 45.8, SOUTH DECKING 19.5, WIR 5.8 (225 m² against 230 scheduled). LDRY (5 scheduled) and MASTER BED (33 scheduled) differ most; the schedule seems to count the lobbies north of the laundry and walk-in robe with those rooms, where the model counts them with LIVING.
 - IFC re-exported.
 
+**18 Nov 2026 — teacher feedback: window, door, railing and stair types**
+
+Feedback: the window and door types needed refining, and the railing and stair types were more generic than the project specs call for.
+
+- Windows: the 18 stock fixed windows (with a 2 x 2 glazing-bar grid, white frames, a stained timber inside frame and trims) replaced with 17 black aluminium units laid out from A05/A06: 9 three-panel units with a louvre in the middle and 8 single panels. New: the four full-height panels either side of the east and west bays, and the louvre panels, which had been solid wall. The east bay window is now 3820 wide. Sizes and positions follow the elevations, so most openings changed.
+- Doors: the hinged flush doors replaced with wall-face sliding doors (35 mm panels, set half open as A04 draws them) and a bypass pair for the laundry. The two hinged glazed doors and three fixed windows on the north deck wall, and the door and two windows on the south deck wall, replaced with full-height aluminium sliding doors, two or three leaves per bay, as A04 and A05 show.
+- Balustrades: the four-rail guard (200 mm gaps, over the 125 mm limit in the A01 notes) replaced with nine rods at 100 mm and a 40 mm top rail at 1000, on 25 mm posts at 1150, matching the elevations. The stair handrails (900 high, vertical pickets) now use the same balustrade.
+- Stair: closed 6 mm steel risers and side stringers replaced with open risers, 65 mm slip-resistant hardwood treads and two inset steel carriages, as shown in the A12 render and the A05 elevation, keeping the open gap under 125 mm.
+- Removed the families no longer used: M_Window-Fixed, M_Muntin Pattern_2x2, both window trims, M_Door-Passage-Single-Flush, M_Door-Passage-Double-Flush and M_Door-Exterior-Single-Two_Lite.
+- IFC re-exported.
+
+**18 Nov 2026 — teacher feedback: drawings and sheet layouts**
+
+- Replaced the template's A0/A1 sheets with the A01–A12 set above on a new A3 title block, with dimensions, tags, notes, schedules, sections, details, shadow diagrams and perspective views. Exported to `Platypus House - Sheets A01-A12.pdf`.
+- Added the Ridge level (7035, not a storey), Melbourne site location and true north.
+
 ## Not modelled yet
 
 - Pantry and store shelving, fireplace unit (its recess is an enclosed box, as drawn in plan), rangehood, shower screens and fittings.
 - Detailed joinery in place of the plain blocks.
-- Louvre panels in the windows.
 - Gutters, box gutter and downpipes.
 - Site: boundaries (47.31 x 27.68 m, 1309 m²), driveway, crossover and ground surface from sheet A02.
-- Sliding door families for the internal doors.
 
 ## Taking it into Unity or Unreal
 
