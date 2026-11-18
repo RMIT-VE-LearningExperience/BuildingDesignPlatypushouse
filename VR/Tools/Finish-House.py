@@ -254,7 +254,9 @@ for node in model["nodes"]:
     sample = (
         world(node, pos) if architecture or "Stair" in product else pos[:, [0, 2, 1]]
     )
-    components = []
+    vertex_blocks = []
+    primitives = []
+    vertex_offset = 0
     for tag in dict.fromkeys(labels):
         subset = tri[tags == tag]
         faces = sample[subset]
@@ -277,9 +279,9 @@ for node in model["nodes"]:
         if tag in ("Floor", "Tread", "Birch", "Cherry"):
             uv = uv[:, ::-1].copy()
         attrs = {
-            "POSITION": write(pos[source_ids], "VEC3", 5126, 34962),
-            "NORMAL": write(nor[source_ids], "VEC3", 5126, 34962),
-            "TEXCOORD_0": write(uv, "VEC2", 5126, 34962),
+            "POSITION": pos[source_ids],
+            "NORMAL": nor[source_ids],
+            "TEXCOORD_0": uv,
         }
         # Normal maps need a tangent frame even though the source IFC has none.
         indices = inverse.reshape(-1, 3)
@@ -309,18 +311,28 @@ for node in model["nodes"]:
         )
         axis_u /= np.maximum(np.linalg.norm(axis_u, axis=1, keepdims=True), 1e-8)
         handed = np.where(np.sum(np.cross(n, axis_u) * axis_v, axis=1) < 0, -1, 1)
-        attrs["TANGENT"] = write(np.column_stack((axis_u, handed)), "VEC4", 5126, 34962)
+        attrs["TANGENT"] = np.column_stack((axis_u, handed))
         if uv2 is not None:
-            attrs["TEXCOORD_1"] = write(uv2[source_ids], "VEC2", 5126, 34962)
-        components.append(
-            {
-                "attributes": attrs,
-                "indices": write(inverse.reshape(-1), "SCALAR", 5125, 34963),
-                "material": material(tag),
-                "mode": 4,
-            }
-        )
+            attrs["TEXCOORD_1"] = uv2[source_ids]
+        vertex_blocks.append(attrs)
+        primitives.append((material(tag), inverse.reshape(-1) + vertex_offset))
+        vertex_offset += len(unique)
         counts[tag] += len(subset)
+    # Use one vertex index space across material slots so the importer, lightmapper
+    # and renderer address exactly the same positions and lightmap coordinates.
+    shared = {}
+    for semantic in vertex_blocks[0]:
+        values = np.concatenate([block[semantic] for block in vertex_blocks])
+        shared[semantic] = write(values, f"VEC{values.shape[1]}", 5126, 34962)
+    components = [
+        {
+            "attributes": shared,
+            "indices": write(indices, "SCALAR", 5125, 34963),
+            "material": slot,
+            "mode": 4,
+        }
+        for slot, indices in primitives
+    ]
     node["mesh"] = cache[key] = len(meshes)
     meshes.append(
         {"name": str(original) + "-" + str(len(meshes)), "primitives": components}

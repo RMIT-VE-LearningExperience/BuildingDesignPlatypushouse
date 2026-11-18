@@ -134,6 +134,10 @@ public static class HouseBuild
         if (!greybox) {
             var probePoints = new List<Vector3>();
             for(float x=-3;x<=27;x+=2.5f) for(float z=-16;z<=2;z+=2.5f) foreach(float y in new[]{.35f,1.7f,3.1f,4.25f,6.5f}) probePoints.Add(new Vector3(x,y,z));
+            // Give each tank a measured sample in the open aisle. Interpolation from
+            // the coarse grid can otherwise include probes buried inside adjacent shells.
+            foreach (var renderer in UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+                if (renderer.probeAnchor != null) probePoints.Add(renderer.probeAnchor.position);
             new GameObject("Baked daylight probes").AddComponent<LightProbeGroup>().probePositions=probePoints.ToArray();
             var lighting = new LightingSettings { bakedGI = true, realtimeGI = false,
                 lightmapResolution = 24, lightmapMaxSize = 2048, lightmapPadding = 4, directSampleCount = 64,
@@ -206,8 +210,8 @@ public static class HouseBuild
         foreach(var slot in slots)slot.SetTextures(background,foreground);
         PlayerSettings.SetPlatformIcons(target,kind,slots);
         PlayerSettings.colorSpace=ColorSpace.Linear;
-        PlayerSettings.bundleVersion = "1.3.0";
-        PlayerSettings.Android.bundleVersionCode = 5;
+        PlayerSettings.bundleVersion = "1.3.1";
+        PlayerSettings.Android.bundleVersionCode = 6;
         PlayerSettings.productName = "Platypus House VR";
         PlayerSettings.SetApplicationIdentifier(target, "com.platypushouse.vr");
         PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
