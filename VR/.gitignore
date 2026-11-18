@@ -1,0 +1,12 @@
+/.work/
+/Library/
+/Temp/
+/Logs/
+/UserSettings/
+/Builds/
+*.csproj
+*.sln
+*.blend1
+
+/.utmp/
+/build/
