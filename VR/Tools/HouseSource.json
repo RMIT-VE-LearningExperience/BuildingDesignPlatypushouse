@@ -1,0 +1,6 @@
+{
+  "exportTimestamp": "2026-11-18T17:47:31+10:00",
+  "sha256": "992FFCBD0135B0BB2C9A1DB6B9959015ED5B44624C22BFC6FCB408D14C3687B9",
+  "converter": "IfcOpenShell IfcConvert 0.8.0 (OCC 7.8.1)",
+  "options": "-y -j 4 --use-element-guids --building-local-placement"
+}
