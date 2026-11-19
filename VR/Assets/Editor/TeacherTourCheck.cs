@@ -36,6 +36,21 @@ public static class TeacherTourCheck {
             Check(s.font!=null && s.textInfo.characterCount>0 && !s.isTextOverflowing,"Unusable text: "+s.text);
         }
     }
+    static void ManualPassage(HouseTour tour,string label,Vector3 center,Vector3 normal){
+        foreach(float side in new[]{-1f,1f}){
+            var direction=normal*side;
+            var start=center-direction*.65f;
+            Run(tour,"Land",start);
+            tour.Origin.Camera.transform.rotation=Quaternion.LookRotation(direction);
+            bool crossed=false;
+            foreach(float slope in new[]{-.5f,-.7f,-1f,-1.2f,-1.5f}){
+                var ray=new Ray(start+Vector3.up*1.2f,(direction+Vector3.up*slope).normalized);
+                var args=new object[]{ray,Vector3.zero};
+                if((bool)Run(tour,"TraceArc",args) && Vector3.Dot((Vector3)args[1]-center,direction)>.25f){crossed=true;break;}
+            }
+            Check(crossed,"No manual teleport through "+label+" in direction "+direction);
+        }
+    }
     static void Tick(){
         if(!SessionState.GetBool(Key,false)||!EditorApplication.isPlaying||Time.frameCount<8)return;
         SessionState.SetBool(Key,false);
@@ -73,16 +88,11 @@ public static class TeacherTourCheck {
             Run(t,"OnDisplayFocus",true);Run(t,"Update");
             Run(t,"SetTourHeight");Check(Mathf.Abs(head.position.y-t.Origin.transform.position.y-1.70f)<.01f,"Height calibration");
             foreach(var z in new[]{-2.85f,3.14f}){
-                var start=new Vector3(-1.56f,2.6f,z-.65f);
-                Run(t,"Land",start);head.localRotation=Quaternion.identity;
-                bool crossed=false;
-                foreach(float slope in new[]{-.5f,-.7f,-1f,-1.2f,-1.5f}){
-                    var ray=new Ray(start+Vector3.up*1.2f,new Vector3(0,slope,1).normalized);
-                    var args=new object[]{ray,Vector3.zero};
-                    if((bool)Run(t,"TraceArc",args) && ((Vector3)args[1]).z>z+.25f){crossed=true;break;}
-                }
-                Check(crossed,"No manual teleport through opening at "+z);
+                ManualPassage(t,"deck opening at "+z,new Vector3(-1.56f,2.6f,z),Vector3.forward);
             }
+            foreach(var door in HouseBuild.InternalDoorways())
+                ManualPassage(t,"internal door "+door.id,new Vector3(door.center[0],door.center[1],door.center[2]),
+                    new Vector3(door.direction[0],door.direction[1],door.direction[2]));
             InputSystem.RegisterLayout<Touch>();
             foreach(var side in new[]{"RightHand","LeftHand"}){
                 head.localRotation=Quaternion.identity;
@@ -108,7 +118,7 @@ public static class TeacherTourCheck {
                 InputSystem.RemoveDevice(device);
             }
             foreach(var stop in t.Stops)Check(HouseTour.ClearFloor(stop.position),stop.name);
-            Debug.Log("TEACHER_ROUTE_OK: six landings, four signs, manual teleport through both glazed bays, left and right controller selection, gaze, map, focus and height");
+            Debug.Log("TEACHER_ROUTE_OK: six landings, four signs, bidirectional manual teleport through eight internal doors and both glazed bays, left and right controller selection, gaze, map, focus and height");
             EditorApplication.Exit(0);
         }catch(Exception e){Debug.LogException(e);EditorApplication.Exit(2);}
     }

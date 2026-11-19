@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import xatlas
 import fast_simplification
+from TourDoors import EXPECTED, open_door
 
 root = Path(__file__).resolve().parents[1]
 source = Path(sys.argv[1])
@@ -105,12 +106,15 @@ def norm(a):
 
 counts = {}
 total = 0
+doorways = []
 for line in (source / "geometry.jsonl").open():
     obj = json.loads(line)
     cat = obj["category"]
     eid = obj["id"]
     if cat in ("Runs", "Supports", "Top Rails"):
         continue  # Parent stairs and railings include these faces.
+    if cat == "Doors":
+        doorways.append(open_door(obj))
     parts = []
     faces = []
     tags = []
@@ -236,10 +240,13 @@ for line in (source / "geometry.jsonl").open():
     doc["meshes"].append(dict(name=name, primitives=primitives))
     counts[cat] = counts.get(cat, 0) + 1
     total += len(tri)
+if {door["id"] for door in doorways} != EXPECTED or len(doorways) != len(EXPECTED):
+    raise RuntimeError("Incomplete teacher door export; eight door instances are required")
 doc["buffers"] = [dict(byteLength=len(buf))]
 header = json.dumps(doc, separators=(",", ":")).encode()
 header += b" " * (-len(header) % 4)
 out = root / "VR/Assets/Models/TeacherHouse.glb"
+out.parent.mkdir(parents=True, exist_ok=True)
 out.write_bytes(
     struct.pack(
         "<4sIII4s", b"glTF", 2, 28 + len(header) + len(buf), len(header), b"JSON"
@@ -248,4 +255,6 @@ out.write_bytes(
     + struct.pack("<I4s", len(buf), b"BIN\0")
     + buf
 )
+out.with_name("TeacherDoorways.json").write_text(json.dumps(dict(doors=doorways), indent=2))
 print(f"{len(doc['nodes'])} elements, {total} triangles", counts)
+print(f"Opened {len(doorways)} internal door instances and two deck glazing panels")

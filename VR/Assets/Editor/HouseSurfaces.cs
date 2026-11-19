@@ -150,7 +150,7 @@ internal sealed class HouseSurfaces
         light.shadows=LightShadows.Soft;
         light.transform.SetPositionAndRotation(position,Quaternion.LookRotation(direction));
         light.areaSize=size; light.range=12;
-        light.color=new Color(.91f,.955f,1);
+        light.color=new Color(.98f,.975f,.94f);
         light.intensity=intensity;
     }
 
@@ -159,23 +159,26 @@ internal sealed class HouseSurfaces
         var sky=AssetDatabase.LoadAssetAtPath<Material>(Folder+"Daylight.mat");
         if(sky==null){sky=new Material(Shader.Find("Skybox/Panoramic"));AssetDatabase.CreateAsset(sky,Folder+"Daylight.mat");}
         sky.SetTexture("_MainTex",Texture("Daylight.hdr"));
-        sky.SetFloat("_Exposure",.85f);
+        sky.SetFloat("_Exposure",1.05f);
         sky.SetFloat("_Rotation",180f);
+        sky.SetColor("_Tint",new Color(.53f,.515f,.48f));
         EditorUtility.SetDirty(sky);
         RenderSettings.skybox=sky;
         RenderSettings.ambientMode=AmbientMode.Skybox;
-        RenderSettings.ambientIntensity=1.05f;
+        RenderSettings.ambientIntensity=1.10f;
         RenderSettings.defaultReflectionMode=DefaultReflectionMode.Skybox;
         RenderSettings.defaultReflectionResolution=128;
         RenderSettings.reflectionIntensity=.80f;
         RenderSettings.sun=sun;
-        sun.transform.rotation=Quaternion.LookRotation(new Vector3(.64f,-.616f,-.46f).normalized);
-        sun.color=new Color(1,.955f,.88f);
-        sun.intensity=1.75f;
-        sun.shadowAngle=5;
+        // Low afternoon sun through the north glazing: warm light, long shadows,
+        // and neutral sky fill rather than uniformly bright window emitters.
+        sun.transform.rotation=Quaternion.LookRotation(new Vector3(.35f,-.259f,-.90f).normalized);
+        sun.color=new Color(1,.93f,.80f);
+        sun.intensity=3.2f;
+        sun.shadowAngle=2;
         DynamicGI.UpdateEnvironment();
-        SkyOpening("North glazing daylight",new Vector3(0,3.91f,3.02f),Vector3.back,new Vector2(9.6f,2.12f),4.5f);
-        SkyOpening("South glazing daylight",new Vector3(0,3.91f,-2.74f),Vector3.forward,new Vector2(4.15f,2.12f),4.5f);
+        SkyOpening("North glazing daylight",new Vector3(0,3.91f,3.02f),Vector3.back,new Vector2(9.6f,2.12f),3.3f);
+        SkyOpening("South glazing daylight",new Vector3(0,3.91f,-2.74f),Vector3.forward,new Vector2(4.15f,2.12f),3.3f);
         SkyOpening("North undercroft skylight",new Vector3(0,1.16f,3.2f),Vector3.back,new Vector2(23,2.10f),2.6f);
         SkyOpening("South undercroft skylight",new Vector3(0,1.16f,-3.42f),Vector3.forward,new Vector2(23,2.10f),2.6f);
         var probe=new GameObject("Living room reflections").AddComponent<ReflectionProbe>();

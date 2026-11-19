@@ -31,6 +31,22 @@ public static class HouseBuild
     public static void BuildQuest()
     {
         ConfigureAndCreate();
+        BuildPreparedQuest();
+    }
+
+    // Package the scene already baked and checked with TeacherPreview.Verify.
+    // This lets a reviewed bake be used directly, without baking it a second time.
+    public static void BuildPreparedQuest()
+    {
+        if(!File.Exists(ScenePath))throw new BuildFailedException("Prepare the tour before building.");
+        EditorSceneManager.OpenScene(ScenePath);
+        if(LightmapSettings.lightmaps.Length==0 || LightmapSettings.lightProbes==null || LightmapSettings.lightProbes.count==0)
+            throw new BuildFailedException("Prepare and bake the tour before building.");
+        ConfigureAndroid();
+        ValidateLandings(UnityEngine.Object.FindAnyObjectByType<HouseTour>().Stops);
+        ValidatePassage("south entrance",-1.56f,-2.85f);
+        ValidatePassage("north deck",-1.56f,3.14f);
+        ValidateInternalDoors();
         Directory.CreateDirectory("Builds");
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
@@ -69,6 +85,7 @@ public static class HouseBuild
         ValidateLandings(tour.Stops);
         ValidatePassage("south entrance",-1.56f,-2.85f);
         ValidatePassage("north deck",-1.56f,3.14f);
+        ValidateInternalDoors();
         tour.Origin.Camera.clearFlags=CameraClearFlags.Skybox;
         tour.Origin.transform.SetPositionAndRotation(tour.Stops[0].position,tour.Stops[0].rotation);
         tour.MapBounds=new Rect(-24,-14,48,28);
@@ -82,9 +99,9 @@ public static class HouseBuild
                 if (renderer.probeAnchor != null) probePoints.Add(renderer.probeAnchor.position);
             new GameObject("Baked daylight probes").AddComponent<LightProbeGroup>().probePositions=probePoints.ToArray();
             var lighting = new LightingSettings { bakedGI = true, realtimeGI = false,
-                lightmapResolution = 24, lightmapMaxSize = 2048, lightmapPadding = 4, directSampleCount = 64,
-                indirectSampleCount = 256, environmentSampleCount = 128, maxBounces = 4,
-                ao=true, aoMaxDistance=.55f, aoExponentIndirect=.28f, aoExponentDirect=0 };
+                lightmapResolution = 24, lightmapMaxSize = 2048, lightmapPadding = 4, directSampleCount = 128,
+                indirectSampleCount = 512, environmentSampleCount = 256, maxBounces = 6,
+                ao=true, aoMaxDistance=.35f, aoExponentIndirect=.22f, aoExponentDirect=0 };
             Lightmapping.lightingSettings=lighting;
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(),ScenePath);
             if (!Lightmapping.Bake() || LightmapSettings.lightmaps.Length == 0 || LightmapSettings.lightProbes == null || LightmapSettings.lightProbes.count == 0) throw new BuildFailedException("Daylight bake failed.");
@@ -151,8 +168,8 @@ public static class HouseBuild
         foreach(var slot in slots)slot.SetTextures(background,foreground);
         PlayerSettings.SetPlatformIcons(target,kind,slots);
         PlayerSettings.colorSpace=ColorSpace.Linear;
-        PlayerSettings.bundleVersion = "1.0.0";
-        PlayerSettings.Android.bundleVersionCode = 1;
+        PlayerSettings.bundleVersion = "1.1.0";
+        PlayerSettings.Android.bundleVersionCode = 2;
         PlayerSettings.productName = "Platypus House - Teacher VR";
         PlayerSettings.SetApplicationIdentifier(target, "com.platypushouse.teacher.vr");
         PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
@@ -225,9 +242,36 @@ public static class HouseBuild
 
     private static void ValidatePassage(string name,float x,float z)
     {
+        ValidatePassage(name,new Vector3(x,2.6f,z),Vector3.forward);
+    }
+
+    [Serializable] public class DoorwayData { public Doorway[] doors; }
+    [Serializable] public class Doorway { public long id; public float[] center; public float[] direction; }
+
+    public static Doorway[] InternalDoorways()
+    {
+        const string path="Assets/Models/TeacherDoorways.json";
+        if(!File.Exists(path))throw new BuildFailedException("Re-export the teacher model: missing doorway clearance data.");
+        var data=JsonUtility.FromJson<DoorwayData>(File.ReadAllText(path));
+        if(data?.doors==null || data.doors.Length!=8 || data.doors.Select(d=>d.id).Distinct().Count()!=8)
+            throw new BuildFailedException("Expected eight internal teacher doorways.");
+        return data.doors;
+    }
+
+    private static void ValidateInternalDoors()
+    {
+        foreach(var door in InternalDoorways())
+            ValidatePassage("internal door "+door.id,new Vector3(door.center[0],door.center[1],door.center[2]),
+                new Vector3(door.direction[0],door.direction[1],door.direction[2]));
+    }
+
+    private static void ValidatePassage(string name,Vector3 center,Vector3 direction)
+    {
         Physics.SyncTransforms();
-        var start=new Vector3(x,2.6f,z-.58f);
-        if(Physics.CapsuleCast(start+Vector3.up*.34f,start+Vector3.up*1.62f,.24f,Vector3.forward,out var hit,1.16f,HouseTour.WorldMask))
+        var start=center-direction*.58f;
+        if(Physics.CheckCapsule(start+Vector3.up*.34f,start+Vector3.up*1.62f,.24f,HouseTour.WorldMask))
+            throw new BuildFailedException(name+" approach is obstructed");
+        if(Physics.CapsuleCast(start+Vector3.up*.34f,start+Vector3.up*1.62f,.24f,direction,out var hit,1.16f,HouseTour.WorldMask))
             throw new BuildFailedException(name+" blocked by "+hit.collider.name);
         Debug.Log("Clear manual doorway: "+name);
     }

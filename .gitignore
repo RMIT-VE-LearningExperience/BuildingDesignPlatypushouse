@@ -2,8 +2,11 @@
 !/Source/BD1X_AT3_Example File 2.rvt
 **/bin/
 **/obj/
+**/__pycache__/
 # Rebuild generated geometry and scene data from the teacher model.
 /VR/Assets/Models/TeacherHouse.glb
+/VR/Assets/Models/TeacherDoorways.json
+/VR/Assets/Models/TeacherDoorways.json.meta
 /VR/Assets/HouseTour.unity
 /VR/Assets/HouseTour/
 /VR/Assets/Generated/TeacherPlan*.png
